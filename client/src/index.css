@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Montserrat:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -14,55 +14,55 @@
   --elevate-1: rgba(0,0,0, .03);
   --elevate-2: rgba(0,0,0, .08);
 
-  --background: 0 0% 100%;
-  --foreground: 0 0% 0%;
-  --border: 0 0% 96.47%;
+  --background: 0 0% 95%;
+  --foreground: 0 0% 18%;
+  --border: 0 0% 85%;
 
-  --card: 0 0% 96.47%;
-  --card-foreground: 0 0% 0%;
-  --card-border: 0 0% 90%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 18%;
+  --card-border: 353 76% 50%;
 
-  --sidebar: 180 6.6667% 97.0588%;
-  --sidebar-foreground: 210 25% 7.8431%;
-  --sidebar-border: 205.0000 25.0000% 90.5882%;
-  --sidebar-primary: 203.8863 88.2845% 53.1373%;
+  --sidebar: 0 0% 100%;
+  --sidebar-foreground: 0 0% 18%;
+  --sidebar-border: 0 0% 85%;
+  --sidebar-primary: 353 76% 50%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 211.5789 51.3514% 92.7451%;
-  --sidebar-accent-foreground: 203.8863 88.2845% 53.1373%;
-  --sidebar-ring: 202.8169 89.1213% 53.1373%;
+  --sidebar-accent: 0 0% 90%;
+  --sidebar-accent-foreground: 353 76% 50%;
+  --sidebar-ring: 353 76% 50%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 0 0% 0%;
-  --popover-border: 0 0% 88%;
+  --popover-foreground: 0 0% 18%;
+  --popover-border: 0 0% 85%;
 
-  --primary: 96 85.19% 73.53%;
-  --primary-foreground: 0 0% 0%;
+  --primary: 353 76% 50%;
+  --primary-foreground: 0 0% 100%;
 
-  --secondary: 0 0% 0%;
+  --secondary: 228 4% 51%;
   --secondary-foreground: 0 0% 100%;
 
-  --muted: 0 0% 96.08%;
-  --muted-foreground: 0 0% 52.94%;
+  --muted: 0 0% 90%;
+  --muted-foreground: 228 4% 40%;
 
-  --accent: 254.21 100% 92.55%;
-  --accent-foreground: 0 0% 0%;
+  --accent: 353 76% 50%;
+  --accent-foreground: 0 0% 100%;
 
   --destructive: 2.04 74.62% 61.37%;
   --destructive-foreground: 0 0% 100%;
 
-  --input: 0 0% 0%;
-  --ring: 0 0% 0%;
+  --input: 0 0% 85%;
+  --ring: 353 76% 50%;
 
-  --chart-1: 203.8863 88.2845% 53.1373%;
-  --chart-2: 159.7826 100% 36.0784%;
-  --chart-3: 42.0290 92.8251% 56.2745%;
-  --chart-4: 147.1429 78.5047% 41.9608%;
-  --chart-5: 341.4894 75.2000% 50.9804%;
+  --chart-1: 353 76% 50%;
+  --chart-2: 353 76% 60%;
+  --chart-3: 228 4% 51%;
+  --chart-4: 228 4% 40%;
+  --chart-5: 353 76% 40%;
 
-  --font-sans: 'Space Grotesk', sans-serif;
-  --font-serif: 'Geist', sans-serif;
-  --font-mono: 'Geist Mono', monospace;
-  --font-display: 'Bebas Neue', 'Orbitron', sans-serif;
+  --font-sans: 'Montserrat', sans-serif;
+  --font-serif: Georgia, serif;
+  --font-mono: Menlo, monospace;
+  --font-display: 'Anton', 'Bebas Neue', sans-serif;
 
   --radius: 0rem;
   --shadow-2xs: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00);
@@ -76,10 +76,10 @@
   --tracking-normal: 0em;
   --spacing: 0.25rem;
 
-  --neon-cyan: 180 100% 50%;
-  --neon-magenta: 300 100% 50%;
-  --neon-green: 120 100% 50%;
-  --neon-yellow: 60 100% 50%;
+  --neon-cyan: 353 76% 50%;
+  --neon-magenta: 353 76% 50%;
+  --neon-green: 228 4% 51%;
+  --neon-yellow: 353 76% 50%;
 
   --sidebar-primary-border: hsl(var(--sidebar-primary));
   --sidebar-primary-border: hsl(from hsl(var(--sidebar-primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
@@ -106,55 +106,55 @@
   --elevate-1: rgba(255,255,255, .04);
   --elevate-2: rgba(255,255,255, .09);
 
-  --background: 0 0% 0%;
-  --foreground: 200 6.6667% 91.1765%;
-  --border: 210 5.2632% 14.9020%;
+  --background: 0 0% 18%;
+  --foreground: 0 0% 100%;
+  --border: 0 0% 30%;
 
-  --card: 228 9.8039% 10%;
-  --card-foreground: 0 0% 85.0980%;
-  --card-border: 180 100% 50%;
+  --card: 0 0% 20%;
+  --card-foreground: 0 0% 95%;
+  --card-border: 353 76% 50%;
 
-  --sidebar: 228 9.8039% 10%;
-  --sidebar-foreground: 0 0% 85.0980%;
-  --sidebar-border: 205.7143 15.7895% 26.0784%;
-  --sidebar-primary: 202.8169 89.1213% 53.1373%;
+  --sidebar: 0 0% 20%;
+  --sidebar-foreground: 0 0% 95%;
+  --sidebar-border: 0 0% 30%;
+  --sidebar-primary: 353 76% 50%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 205.7143 70% 7.8431%;
-  --sidebar-accent-foreground: 203.7736 87.6033% 52.5490%;
-  --sidebar-ring: 202.8169 89.1213% 53.1373%;
+  --sidebar-accent: 0 0% 25%;
+  --sidebar-accent-foreground: 353 76% 50%;
+  --sidebar-ring: 353 76% 50%;
 
   --popover: 0 0% 0%;
   --popover-foreground: 200 6.6667% 91.1765%;
   --popover-border: 208 28% 18%;
 
-  --primary: 203.7736 87.6033% 52.5490%;
+  --primary: 353 76% 50%;
   --primary-foreground: 0 0% 100%;
 
-  --secondary: 195.0000 15.3846% 94.9020%;
-  --secondary-foreground: 210 25% 7.8431%;
+  --secondary: 228 4% 51%;
+  --secondary-foreground: 0 0% 100%;
 
-  --muted: 0 0% 9.4118%;
-  --muted-foreground: 210 3.3898% 46.2745%;
+  --muted: 0 0% 25%;
+  --muted-foreground: 228 4% 51%;
 
-  --accent: 205.7143 70% 7.8431%;
-  --accent-foreground: 203.7736 87.6033% 52.5490%;
+  --accent: 353 76% 50%;
+  --accent-foreground: 0 0% 100%;
 
   --destructive: 356.3033 90.5579% 54.3137%;
   --destructive-foreground: 0 0% 100%;
 
-  --input: 207.6923 27.6596% 18.4314%;
-  --ring: 202.8169 89.1213% 53.1373%;
+  --input: 0 0% 30%;
+  --ring: 353 76% 50%;
 
-  --chart-1: 203.8863 88.2845% 53.1373%;
-  --chart-2: 159.7826 100% 36.0784%;
-  --chart-3: 42.0290 92.8251% 56.2745%;
-  --chart-4: 147.1429 78.5047% 41.9608%;
-  --chart-5: 341.4894 75.2000% 50.9804%;
+  --chart-1: 353 76% 50%;
+  --chart-2: 353 76% 60%;
+  --chart-3: 228 4% 51%;
+  --chart-4: 228 4% 40%;
+  --chart-5: 353 76% 40%;
 
-  --font-sans: Open Sans, sans-serif;
+  --font-sans: 'Montserrat', sans-serif;
   --font-serif: Georgia, serif;
   --font-mono: Menlo, monospace;
-  --font-display: 'Bebas Neue', 'Orbitron', sans-serif;
+  --font-display: 'Anton', 'Bebas Neue', sans-serif;
 
   --radius: 1.3rem;
   --shadow-2xs: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00);
@@ -168,10 +168,10 @@
   --tracking-normal: 0em;
   --spacing: 0.25rem;
 
-  --neon-cyan: 180 100% 50%;
-  --neon-magenta: 300 100% 50%;
-  --neon-green: 120 100% 50%;
-  --neon-yellow: 60 100% 50%;
+  --neon-cyan: 353 76% 50%;
+  --neon-magenta: 353 76% 50%;
+  --neon-green: 228 4% 51%;
+  --neon-yellow: 353 76% 50%;
 
   --sidebar-primary-border: hsl(var(--sidebar-primary));
   --sidebar-primary-border: hsl(from hsl(var(--sidebar-primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);

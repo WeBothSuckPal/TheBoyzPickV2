@@ -47,7 +47,7 @@ interface ChatMessageData {
 }
 
 export default function HomePage() {
-  const [currentPlayer, setCurrentPlayer] = useState("Money-Mike");
+  const [currentPlayer, setCurrentPlayer] = useState("Carter");
   const [showAdmin, setShowAdmin] = useState(false);
   const { toast } = useToast();
 
@@ -232,8 +232,8 @@ export default function HomePage() {
     <div className="min-h-screen bg-background">
       <header className="border-b-2 border-neon-cyan py-6 px-4 md:px-8 bg-card/30">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-4xl md:text-6xl font-display text-center text-neon-cyan neon-glow-cyan mb-2">
-            THE PARLAY-VOUS LOUNGE
+          <h1 className="text-4xl md:text-6xl font-display text-center text-neon-cyan neon-glow-cyan mb-2 tracking-wide">
+            DABOYZPICK
           </h1>
           <div className="flex flex-col md:flex-row items-center justify-center gap-4 text-center text-muted-foreground text-sm md:text-base">
             <p>
@@ -361,7 +361,7 @@ export default function HomePage() {
 
       <footer className="border-t border-border py-6 px-4 md:px-8 mt-12">
         <p className="text-center text-sm text-muted-foreground">
-          The Parlay-Vous Lounge • Where picks become legends and the chips never lie
+          DaBoyzPick • Go Buckeyes!
         </p>
       </footer>
     </div>

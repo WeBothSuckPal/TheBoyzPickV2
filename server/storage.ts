@@ -57,10 +57,10 @@ export class MemStorage implements IStorage {
 
   private initializeDefaultData() {
     const defaultPlayers: InsertPlayer[] = [
-      { name: "Money-Mike", chips: 1250, avatar: "dollar" },
-      { name: "The Professor", chips: 1100, avatar: "brain" },
-      { name: "Mr. Gut-Feeling", chips: 950, avatar: "crystal" },
-      { name: "The Jinx", chips: 750, avatar: "mirror" },
+      { name: "Carter", chips: 1000, avatar: "dollar" },
+      { name: "Chub", chips: 1000, avatar: "brain" },
+      { name: "Perky", chips: 1000, avatar: "crystal" },
+      { name: "Jerry Fader", chips: 1000, avatar: "mirror" },
     ];
 
     defaultPlayers.forEach((p) => {
