@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, XCircle, Snowflake, Coins } from "lucide-react";
+import { CheckCircle2, XCircle, Snowflake, Coins, Download } from "lucide-react";
 
 interface PendingPick {
   id: string;
@@ -17,12 +17,16 @@ interface AdminPanelProps {
   pendingPicks?: PendingPick[];
   onResolveWin?: (pickId: string) => void;
   onResolveLoss?: (pickId: string) => void;
+  onFetchGames?: () => void;
+  isFetchingGames?: boolean;
 }
 
 export default function AdminPanel({
   pendingPicks = [],
   onResolveWin,
   onResolveLoss,
+  onFetchGames,
+  isFetchingGames = false,
 }: AdminPanelProps) {
   const handleWin = (pickId: string) => {
     console.log(`Resolved pick ${pickId} as WIN`);
@@ -36,9 +40,24 @@ export default function AdminPanel({
 
   return (
     <Card className="p-6 border-2 border-destructive" data-testid="card-admin-panel">
-      <h3 className="text-2xl font-display text-destructive mb-6">
-        ADMIN PANEL - RESOLVE PICKS
-      </h3>
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-2xl font-display text-destructive">
+          ADMIN PANEL
+        </h3>
+        <Button
+          onClick={onFetchGames}
+          disabled={isFetchingGames}
+          className="bg-primary text-primary-foreground font-display"
+          data-testid="button-fetch-games"
+        >
+          <Download className="w-4 h-4 mr-2" />
+          {isFetchingGames ? "Fetching..." : "Fetch Games"}
+        </Button>
+      </div>
+
+      <h4 className="text-lg font-display text-destructive mb-4">
+        RESOLVE PICKS
+      </h4>
 
       <div className="space-y-4">
         {pendingPicks.length === 0 ? (

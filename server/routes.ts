@@ -285,6 +285,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/games", async (req, res) => {
+    try {
+      const weekId = req.query.weekId as string;
+      if (!weekId) {
+        return res.status(400).json({ error: "weekId is required" });
+      }
+
+      const games = await storage.getGames(weekId);
+      res.json(games);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch games" });
+    }
+  });
+
+  app.post("/api/admin/fetch-games", async (req, res) => {
+    try {
+      if (!req.session.isAdminAuthenticated) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const { weekId } = req.body;
+      if (!weekId) {
+        return res.status(400).json({ error: "weekId is required" });
+      }
+
+      const apiKey = process.env.ODDS_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ error: "Odds API key not configured" });
+      }
+
+      const response = await fetch(
+        `https://api.the-odds-api.com/v4/sports/americanfootball_ncaaf/odds?apiKey=${apiKey}&regions=us&markets=spreads,totals&oddsFormat=american`
+      );
+
+      if (!response.ok) {
+        return res.status(response.status).json({ error: "Failed to fetch games from Odds API" });
+      }
+
+      const oddsData = await response.json();
+
+      await storage.deleteGamesByWeek(weekId);
+
+      const createdGames = [];
+      for (const game of oddsData) {
+        let homeSpread = null;
+        let awaySpread = null;
+        let overUnder = null;
+
+        if (game.bookmakers && game.bookmakers.length > 0) {
+          const bookmaker = game.bookmakers[0];
+          const spreadsMarket = bookmaker.markets?.find((m: any) => m.key === "spreads");
+          const totalsMarket = bookmaker.markets?.find((m: any) => m.key === "totals");
+
+          if (spreadsMarket) {
+            const homeOutcome = spreadsMarket.outcomes.find((o: any) => o.name === game.home_team);
+            const awayOutcome = spreadsMarket.outcomes.find((o: any) => o.name === game.away_team);
+            if (homeOutcome) homeSpread = `${homeOutcome.point > 0 ? '+' : ''}${homeOutcome.point}`;
+            if (awayOutcome) awaySpread = `${awayOutcome.point > 0 ? '+' : ''}${awayOutcome.point}`;
+          }
+
+          if (totalsMarket) {
+            const overOutcome = totalsMarket.outcomes.find((o: any) => o.name === "Over");
+            if (overOutcome) overUnder = `${overOutcome.point}`;
+          }
+        }
+
+        const createdGame = await storage.createGame({
+          id: game.id,
+          weekId,
+          sportKey: game.sport_key,
+          commenceTime: new Date(game.commence_time),
+          homeTeam: game.home_team,
+          awayTeam: game.away_team,
+          homeSpread,
+          awaySpread,
+          overUnder,
+        });
+        createdGames.push(createdGame);
+      }
+
+      res.json({ 
+        success: true, 
+        count: createdGames.length,
+        games: createdGames,
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to fetch and store games" });
+    }
+  });
+
   app.post("/api/admin/verify", async (req, res) => {
     try {
       const { password } = req.body;

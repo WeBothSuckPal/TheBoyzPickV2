@@ -9,6 +9,8 @@ import {
   type InsertFade,
   type ChatMessage,
   type InsertChatMessage,
+  type Game,
+  type InsertGame,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -36,6 +38,11 @@ export interface IStorage {
 
   getChatMessages(limit?: number): Promise<ChatMessage[]>;
   createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
+
+  getGames(weekId: string): Promise<Game[]>;
+  getGame(id: string): Promise<Game | undefined>;
+  createGame(game: InsertGame): Promise<Game>;
+  deleteGamesByWeek(weekId: string): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -44,6 +51,7 @@ export class MemStorage implements IStorage {
   private picks: Map<string, Pick>;
   private fades: Map<string, Fade>;
   private chatMessages: Map<string, ChatMessage>;
+  private games: Map<string, Game>;
 
   constructor() {
     this.players = new Map();
@@ -51,6 +59,7 @@ export class MemStorage implements IStorage {
     this.picks = new Map();
     this.fades = new Map();
     this.chatMessages = new Map();
+    this.games = new Map();
 
     this.initializeDefaultData();
   }
@@ -65,7 +74,12 @@ export class MemStorage implements IStorage {
 
     defaultPlayers.forEach((p) => {
       const id = randomUUID();
-      const player: Player = { ...p, id };
+      const player: Player = { 
+        id,
+        name: p.name,
+        avatar: p.avatar,
+        chips: p.chips ?? 1000,
+      };
       this.players.set(id, player);
     });
 
@@ -93,7 +107,12 @@ export class MemStorage implements IStorage {
 
   async createPlayer(insertPlayer: InsertPlayer): Promise<Player> {
     const id = randomUUID();
-    const player: Player = { ...insertPlayer, id };
+    const player: Player = { 
+      id,
+      name: insertPlayer.name,
+      avatar: insertPlayer.avatar,
+      chips: insertPlayer.chips ?? 1000,
+    };
     this.players.set(id, player);
     return player;
   }
@@ -119,8 +138,9 @@ export class MemStorage implements IStorage {
   async createWeek(insertWeek: InsertWeek): Promise<Week> {
     const id = randomUUID();
     const week: Week = {
-      ...insertWeek,
       id,
+      weekNumber: insertWeek.weekNumber,
+      isActive: insertWeek.isActive ?? true,
       createdAt: new Date(),
     };
     this.weeks.set(id, week);
@@ -214,6 +234,40 @@ export class MemStorage implements IStorage {
     };
     this.chatMessages.set(id, message);
     return message;
+  }
+
+  async getGames(weekId: string): Promise<Game[]> {
+    return Array.from(this.games.values())
+      .filter((g) => g.weekId === weekId)
+      .sort((a, b) => a.commenceTime.getTime() - b.commenceTime.getTime());
+  }
+
+  async getGame(id: string): Promise<Game | undefined> {
+    return this.games.get(id);
+  }
+
+  async createGame(insertGame: InsertGame): Promise<Game> {
+    const game: Game = {
+      id: insertGame.id,
+      weekId: insertGame.weekId,
+      sportKey: insertGame.sportKey ?? "americanfootball_ncaaf",
+      commenceTime: insertGame.commenceTime,
+      homeTeam: insertGame.homeTeam,
+      awayTeam: insertGame.awayTeam,
+      homeSpread: insertGame.homeSpread ?? null,
+      awaySpread: insertGame.awaySpread ?? null,
+      overUnder: insertGame.overUnder ?? null,
+      createdAt: new Date(),
+    };
+    this.games.set(insertGame.id, game);
+    return game;
+  }
+
+  async deleteGamesByWeek(weekId: string): Promise<void> {
+    const gameIds = Array.from(this.games.values())
+      .filter((g) => g.weekId === weekId)
+      .map((g) => g.id);
+    gameIds.forEach((id) => this.games.delete(id));
   }
 }
 

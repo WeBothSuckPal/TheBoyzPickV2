@@ -169,6 +169,26 @@ export default function HomePage() {
     },
   });
 
+  const fetchGamesMutation = useMutation({
+    mutationFn: async () => {
+      if (!activeWeek?.id) throw new Error("No active week found");
+      return await apiRequest("POST", "/api/admin/fetch-games", { weekId: activeWeek.id });
+    },
+    onSuccess: (data) => {
+      toast({ 
+        title: "Games fetched successfully!", 
+        description: `Loaded ${data.count} games from The Odds API`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to fetch games",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const sendMessageMutation = useMutation({
     mutationFn: async (data: { playerId: string; message: string }) => {
       return await apiRequest("POST", "/api/chat/messages", data);
@@ -373,6 +393,8 @@ export default function HomePage() {
               }))}
               onResolveWin={(id) => resolvePickMutation.mutate({ pickId: id, status: "win" })}
               onResolveLoss={(id) => resolvePickMutation.mutate({ pickId: id, status: "loss" })}
+              onFetchGames={() => fetchGamesMutation.mutate()}
+              isFetchingGames={fetchGamesMutation.isPending}
             />
           )}
         </section>
