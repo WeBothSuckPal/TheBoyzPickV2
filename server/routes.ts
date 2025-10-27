@@ -285,5 +285,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/admin/verify", async (req, res) => {
+    try {
+      const { password } = req.body;
+      const adminPassword = process.env.ADMIN_PASSWORD;
+
+      if (!adminPassword) {
+        return res.status(500).json({ error: "Admin password not configured" });
+      }
+
+      if (password === adminPassword) {
+        req.session.isAdminAuthenticated = true;
+        res.json({ success: true });
+      } else {
+        res.status(401).json({ error: "Incorrect password" });
+      }
+    } catch (error) {
+      res.status(500).json({ error: "Failed to verify password" });
+    }
+  });
+
+  app.get("/api/admin/status", async (req, res) => {
+    try {
+      const isAuthenticated = req.session.isAdminAuthenticated === true;
+      res.json({ isAuthenticated });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to check auth status" });
+    }
+  });
+
+  app.post("/api/admin/logout", async (req, res) => {
+    try {
+      req.session.isAdminAuthenticated = false;
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to logout" });
+    }
+  });
+
   return httpServer;
 }

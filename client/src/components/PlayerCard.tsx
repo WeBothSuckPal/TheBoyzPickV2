@@ -20,7 +20,7 @@ export default function PlayerCard({
   isLast,
 }: PlayerCardProps) {
   const getAvatarComponent = () => {
-    const iconClass = "w-16 h-16 text-neon-cyan";
+    const iconClass = "w-16 h-16 text-primary";
     switch (avatar) {
       case "brain":
         return (
@@ -64,7 +64,7 @@ export default function PlayerCard({
 
   return (
     <Card
-      className="relative p-6 border-2 neon-border-cyan hover-elevate"
+      className="relative p-6 border-2 border-primary hover-elevate"
       data-testid={`card-player-${name.toLowerCase().replace(/\s+/g, '-')}`}
     >
       {isFirst && (
@@ -79,12 +79,12 @@ export default function PlayerCard({
       )}
 
       <div className="flex flex-col items-center gap-4">
-        <div className="animate-pulse-glow" data-testid={`icon-avatar-${avatar}`}>
+        <div data-testid={`icon-avatar-${avatar}`}>
           {getAvatarComponent()}
         </div>
 
         <h3
-          className="text-2xl font-display text-neon-cyan neon-glow-cyan text-center"
+          className="text-2xl font-display text-foreground text-center"
           data-testid={`text-player-name-${name.toLowerCase().replace(/\s+/g, '-')}`}
         >
           {name}

@@ -7,6 +7,7 @@ import ConsensusBar from "@/components/ConsensusBar";
 import PickSubmissionDialog from "@/components/PickSubmissionDialog";
 import ChatBox from "@/components/ChatBox";
 import AdminPanel from "@/components/AdminPanel";
+import AdminPasswordDialog from "@/components/AdminPasswordDialog";
 import { Separator } from "@/components/ui/separator";
 import { connectWebSocket } from "@/lib/websocket";
 import { useWebSocket } from "@/hooks/useWebSocket";
@@ -49,11 +50,23 @@ interface ChatMessageData {
 export default function HomePage() {
   const [currentPlayer, setCurrentPlayer] = useState("Carter");
   const [showAdmin, setShowAdmin] = useState(false);
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     connectWebSocket();
   }, []);
+
+  const { data: authStatus } = useQuery<{ isAuthenticated: boolean }>({
+    queryKey: ["/api/admin/status"],
+  });
+
+  useEffect(() => {
+    if (authStatus?.isAuthenticated) {
+      setIsAdminAuthenticated(true);
+    }
+  }, [authStatus]);
 
   const { data: players = [], refetch: refetchPlayers } = useQuery<Player[]>({
     queryKey: ["/api/players"],
@@ -338,14 +351,20 @@ export default function HomePage() {
               ADMIN PANEL
             </h2>
             <button
-              onClick={() => setShowAdmin(!showAdmin)}
-              className="text-sm text-muted-foreground hover:text-foreground"
+              onClick={() => {
+                if (isAdminAuthenticated) {
+                  setShowAdmin(!showAdmin);
+                } else {
+                  setShowPasswordDialog(true);
+                }
+              }}
+              className="text-sm text-muted-foreground hover:text-foreground font-medium"
               data-testid="button-toggle-admin"
             >
-              {showAdmin ? "Hide" : "Show"}
+              {isAdminAuthenticated && showAdmin ? "Hide" : "Show"}
             </button>
           </div>
-          {showAdmin && (
+          {isAdminAuthenticated && showAdmin && (
             <AdminPanel
               pendingPicks={pendingPicks.map((p) => ({
                 ...p,
@@ -358,6 +377,16 @@ export default function HomePage() {
           )}
         </section>
       </main>
+
+      <AdminPasswordDialog
+        open={showPasswordDialog}
+        onOpenChange={setShowPasswordDialog}
+        onSuccess={() => {
+          setIsAdminAuthenticated(true);
+          setShowAdmin(true);
+          toast({ title: "Admin access granted" });
+        }}
+      />
 
       <footer className="border-t border-border py-6 px-4 md:px-8 mt-12">
         <p className="text-center text-sm text-muted-foreground">
