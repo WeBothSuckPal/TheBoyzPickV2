@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import PlayerCard from "@/components/PlayerCard";
 import PickCard from "@/components/PickCard";
 import ConsensusBar from "@/components/ConsensusBar";
@@ -6,150 +8,225 @@ import PickSubmissionDialog from "@/components/PickSubmissionDialog";
 import ChatBox from "@/components/ChatBox";
 import AdminPanel from "@/components/AdminPanel";
 import { Separator } from "@/components/ui/separator";
+import { connectWebSocket } from "@/lib/websocket";
+import { useWebSocket } from "@/hooks/useWebSocket";
+import { useToast } from "@/hooks/use-toast";
+
+interface Player {
+  id: string;
+  name: string;
+  chips: number;
+  avatar: string;
+}
+
+interface Week {
+  id: string;
+  weekNumber: number;
+  isActive: boolean;
+}
+
+interface Pick {
+  id: string;
+  weekId: string;
+  playerId: string;
+  pickType: "LOCK" | "SIDE" | "LOTTO";
+  pick: string;
+  chips: number;
+  status: "pending" | "win" | "loss";
+  playerName: string;
+  isFaded: boolean;
+  fadedBy: string[];
+}
+
+interface ChatMessageData {
+  id: string;
+  playerId: string;
+  message: string;
+  playerName: string;
+  createdAt: string;
+}
 
 export default function HomePage() {
-  const [currentWeek] = useState(9);
-  const [currentPlayer] = useState("Money-Mike");
+  const [currentPlayer, setCurrentPlayer] = useState("Money-Mike");
   const [showAdmin, setShowAdmin] = useState(false);
+  const { toast } = useToast();
 
-  const players = [
-    { name: "Money-Mike", chips: 1250, avatar: "dollar" as const, rank: 1 },
-    { name: "The Professor", chips: 1100, avatar: "brain" as const, rank: 2 },
-    { name: "Mr. Gut-Feeling", chips: 950, avatar: "crystal" as const, rank: 3 },
-    { name: "The Jinx", chips: 750, avatar: "mirror" as const, rank: 4 },
-  ];
+  useEffect(() => {
+    connectWebSocket();
+  }, []);
 
+  const { data: players = [], refetch: refetchPlayers } = useQuery<Player[]>({
+    queryKey: ["/api/players"],
+  });
+
+  const { data: activeWeek } = useQuery<Week>({
+    queryKey: ["/api/weeks/active"],
+  });
+
+  const { data: picks = [], refetch: refetchPicks } = useQuery<Pick[]>({
+    queryKey: ["/api/picks", activeWeek?.id],
+    enabled: !!activeWeek?.id,
+    queryFn: async () => {
+      const response = await fetch(`/api/picks?weekId=${activeWeek!.id}`);
+      if (!response.ok) throw new Error("Failed to fetch picks");
+      return response.json();
+    },
+  });
+
+  const { data: chatMessagesData = [], refetch: refetchChat } = useQuery<ChatMessageData[]>({
+    queryKey: ["/api/chat/messages"],
+  });
+
+  const chatMessages = chatMessagesData.map((msg) => ({
+    id: msg.id,
+    user: msg.playerName,
+    message: msg.message,
+    timestamp: new Date(msg.createdAt),
+  }));
+
+  const handleWebSocketMessage = useCallback((data: any) => {
+    if (data.type === "picks_submitted") {
+      refetchPicks();
+      toast({ title: "New picks submitted!" });
+    } else if (data.type === "fade_created") {
+      refetchPicks();
+      refetchPlayers();
+      toast({ title: "A pick has been faded!" });
+    } else if (data.type === "pick_resolved") {
+      refetchPicks();
+      refetchPlayers();
+      toast({ title: "Pick resolved!" });
+    } else if (data.type === "chat_message") {
+      refetchChat();
+    }
+  }, [refetchPicks, refetchPlayers, refetchChat, toast]);
+
+  useWebSocket(handleWebSocketMessage);
+
+  const submitPicksMutation = useMutation({
+    mutationFn: async (data: { playerId: string; lock: string; side: string; lotto: string }) => {
+      return await apiRequest("POST", "/api/picks", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/picks"] });
+      toast({ title: "Picks submitted successfully!" });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to submit picks",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const fadeMutation = useMutation({
+    mutationFn: async (data: { playerId: string; targetPickId: string }) => {
+      return await apiRequest("POST", "/api/fades", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/picks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/players"] });
+      toast({ title: "Fade successful!" });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to fade",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const resolvePickMutation = useMutation({
+    mutationFn: async ({ pickId, status }: { pickId: string; status: "win" | "loss" }) => {
+      return await apiRequest("POST", `/api/picks/${pickId}/resolve`, { status });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/picks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/players"] });
+      toast({ title: "Pick resolved!" });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to resolve pick",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const sendMessageMutation = useMutation({
+    mutationFn: async (data: { playerId: string; message: string }) => {
+      return await apiRequest("POST", "/api/chat/messages", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/chat/messages"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to send message",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const currentPlayerData = players.find((p) => p.name === currentPlayer);
   const sortedPlayers = [...players].sort((a, b) => b.chips - a.chips);
 
-  const picks = [
-    {
-      id: "1",
-      playerName: "Money-Mike",
-      pickType: "LOCK" as const,
-      pick: "Eagles -7.5",
-      chips: 100,
-      isFaded: true,
-      fadedBy: ["The Jinx"],
-    },
-    {
-      id: "2",
-      playerName: "Money-Mike",
-      pickType: "SIDE" as const,
-      pick: "Cowboys +3.5",
-      chips: 50,
-    },
-    {
-      id: "3",
-      playerName: "Money-Mike",
-      pickType: "LOTTO" as const,
-      pick: "DAL ML + PHI ML + KC ML",
-      chips: 10,
-    },
-    {
-      id: "4",
-      playerName: "The Professor",
-      pickType: "LOCK" as const,
-      pick: "Eagles -7.5",
-      chips: 100,
-    },
-    {
-      id: "5",
-      playerName: "The Professor",
-      pickType: "SIDE" as const,
-      pick: "49ers -4",
-      chips: 50,
-    },
-    {
-      id: "6",
-      playerName: "The Professor",
-      pickType: "LOTTO" as const,
-      pick: "GB + TB + BUF ML",
-      chips: 10,
-    },
-    {
-      id: "7",
-      playerName: "Mr. Gut-Feeling",
-      pickType: "LOCK" as const,
-      pick: "Eagles -7.5",
-      chips: 100,
-    },
-    {
-      id: "8",
-      playerName: "Mr. Gut-Feeling",
-      pickType: "SIDE" as const,
-      pick: "Packers ML",
-      chips: 50,
-    },
-    {
-      id: "9",
-      playerName: "Mr. Gut-Feeling",
-      pickType: "LOTTO" as const,
-      pick: "NYG + LAR + SEA ML",
-      chips: 10,
-    },
-    {
-      id: "10",
-      playerName: "The Jinx",
-      pickType: "LOCK" as const,
-      pick: "Patriots +14",
-      chips: 100,
-    },
-    {
-      id: "11",
-      playerName: "The Jinx",
-      pickType: "SIDE" as const,
-      pick: "Ravens -3",
-      chips: 50,
-    },
-    {
-      id: "12",
-      playerName: "The Jinx",
-      pickType: "LOTTO" as const,
-      pick: "MIA + CIN + DEN ML",
-      chips: 10,
-    },
-  ];
-
-  const [chatMessages, setChatMessages] = useState([
-    {
-      id: "1",
-      user: "Money-Mike",
-      message: "Eagles are a LOCK! Easy money boys! 💰",
-      timestamp: new Date(Date.now() - 300000),
-    },
-    {
-      id: "2",
-      user: "The Professor",
-      message: "I concur. The analytics support the Eagles spread.",
-      timestamp: new Date(Date.now() - 240000),
-    },
-    {
-      id: "3",
-      user: "The Jinx",
-      message: "I'm fading Mike. Eagles are overrated!",
-      timestamp: new Date(Date.now() - 180000),
-    },
-    {
-      id: "4",
-      user: "Mr. Gut-Feeling",
-      message: "My gut says Eagles too. Let's ride! 🦅",
-      timestamp: new Date(Date.now() - 120000),
-    },
-  ]);
-
   const lockPicks = picks.filter((p) => p.pickType === "LOCK");
-  const eaglesLockCount = lockPicks.filter((p) => p.pick === "Eagles -7.5").length;
-  const hasConsensus = eaglesLockCount >= 3;
+  const pickCounts: Record<string, Set<string>> = {};
+  lockPicks.forEach((pick) => {
+    if (!pickCounts[pick.pick]) {
+      pickCounts[pick.pick] = new Set();
+    }
+    pickCounts[pick.pick].add(pick.playerId);
+  });
+  const hasConsensus = Object.values(pickCounts).some((players) => players.size >= 3);
 
-  const handleSendMessage = (message: string, user: string) => {
-    const newMsg = {
-      id: Date.now().toString(),
-      user,
-      message,
-      timestamp: new Date(),
-    };
-    setChatMessages([...chatMessages, newMsg]);
+  const handleSubmitPicks = (picksData: any) => {
+    if (!currentPlayerData) {
+      toast({
+        title: "Please select a player first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    submitPicksMutation.mutate({
+      playerId: currentPlayerData.id,
+      lock: picksData.lock,
+      side: picksData.side,
+      lotto: picksData.lotto,
+    });
   };
+
+  const handleFade = (pickId: string) => {
+    if (!currentPlayerData) {
+      toast({
+        title: "Please select a player first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    fadeMutation.mutate({
+      playerId: currentPlayerData.id,
+      targetPickId: pickId,
+    });
+  };
+
+  const handleSendMessage = (message: string, _user: string) => {
+    if (!currentPlayerData) return;
+
+    sendMessageMutation.mutate({
+      playerId: currentPlayerData.id,
+      message,
+    });
+  };
+
+  const pendingPicks = picks.filter((p) => p.status === "pending");
 
   return (
     <div className="min-h-screen bg-background">
@@ -158,9 +235,26 @@ export default function HomePage() {
           <h1 className="text-4xl md:text-6xl font-display text-center text-neon-cyan neon-glow-cyan mb-2">
             THE PARLAY-VOUS LOUNGE
           </h1>
-          <p className="text-center text-muted-foreground text-sm md:text-base">
-            Week {currentWeek} • Playing as: <span className="text-neon-cyan font-medium">{currentPlayer}</span>
-          </p>
+          <div className="flex flex-col md:flex-row items-center justify-center gap-4 text-center text-muted-foreground text-sm md:text-base">
+            <p>
+              Week {activeWeek?.weekNumber || "..."}
+            </p>
+            <div className="flex items-center gap-2">
+              <span>Playing as:</span>
+              <select
+                value={currentPlayer}
+                onChange={(e) => setCurrentPlayer(e.target.value)}
+                className="bg-card border border-neon-cyan text-neon-cyan px-3 py-1 rounded-md font-medium"
+                data-testid="select-current-player"
+              >
+                {players.map((p) => (
+                  <option key={p.id} value={p.name}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
         </div>
       </header>
 
@@ -172,11 +266,11 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {sortedPlayers.map((player, idx) => (
               <PlayerCard
-                key={player.name}
+                key={player.id}
                 name={player.name}
                 chips={player.chips}
-                avatar={player.avatar}
-                rank={player.rank as 1 | 2 | 3 | 4}
+                avatar={player.avatar as any}
+                rank={(idx + 1) as 1 | 2 | 3 | 4}
                 isFirst={idx === 0}
                 isLast={idx === sortedPlayers.length - 1}
               />
@@ -191,9 +285,7 @@ export default function HomePage() {
             <h2 className="text-3xl font-display text-neon-cyan neon-glow-cyan">
               THIS WEEK'S PICKS
             </h2>
-            <PickSubmissionDialog
-              onSubmit={(picks) => console.log("New picks submitted:", picks)}
-            />
+            <PickSubmissionDialog onSubmit={handleSubmitPicks} />
           </div>
 
           {hasConsensus && <ConsensusBar />}
@@ -206,14 +298,21 @@ export default function HomePage() {
                 pickType={pick.pickType}
                 pick={pick.pick}
                 chips={pick.chips}
+                status={pick.status}
                 isFaded={pick.isFaded}
                 fadedBy={pick.fadedBy}
-                canFade={pick.playerName !== currentPlayer}
+                canFade={pick.playerName !== currentPlayer && pick.status === "pending"}
                 isOwnPick={pick.playerName === currentPlayer}
-                onFade={() => console.log(`Fading pick ${pick.id}`)}
+                onFade={() => handleFade(pick.id)}
               />
             ))}
           </div>
+
+          {picks.length === 0 && (
+            <p className="text-center text-muted-foreground py-12">
+              No picks submitted yet. Be the first to lock in your picks!
+            </p>
+          )}
         </section>
 
         <Separator className="bg-border" />
@@ -248,13 +347,13 @@ export default function HomePage() {
           </div>
           {showAdmin && (
             <AdminPanel
-              pendingPicks={picks.map((p) => ({
+              pendingPicks={pendingPicks.map((p) => ({
                 ...p,
                 isFaded: p.isFaded || false,
                 fadedBy: p.fadedBy || [],
               }))}
-              onResolveWin={(id) => console.log("Resolved as WIN:", id)}
-              onResolveLoss={(id) => console.log("Resolved as LOSS:", id)}
+              onResolveWin={(id) => resolvePickMutation.mutate({ pickId: id, status: "win" })}
+              onResolveLoss={(id) => resolvePickMutation.mutate({ pickId: id, status: "loss" })}
             />
           )}
         </section>

@@ -20,7 +20,6 @@ import {
 import { Plus } from "lucide-react";
 
 interface PickSubmission {
-  player: string;
   lock: string;
   side: string;
   lotto: string;
@@ -32,24 +31,22 @@ interface PickSubmissionDialogProps {
 
 export default function PickSubmissionDialog({ onSubmit }: PickSubmissionDialogProps) {
   const [open, setOpen] = useState(false);
-  const [player, setPlayer] = useState("");
   const [lock, setLock] = useState("");
   const [side, setSide] = useState("");
   const [lotto, setLotto] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const picks: PickSubmission = { player, lock, side, lotto };
+    const picks: PickSubmission = { lock, side, lotto };
     console.log("Submitted picks:", picks);
     onSubmit?.(picks);
     setOpen(false);
-    setPlayer("");
     setLock("");
     setSide("");
     setLotto("");
   };
 
-  const isValid = player && lock && side && lotto;
+  const isValid = lock && side && lotto;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -73,23 +70,6 @@ export default function PickSubmissionDialog({ onSubmit }: PickSubmissionDialogP
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-6 mt-4">
-          <div className="space-y-2">
-            <Label htmlFor="player" className="font-display text-sm">
-              SELECT PLAYER
-            </Label>
-            <Select value={player} onValueChange={setPlayer}>
-              <SelectTrigger id="player" data-testid="select-player">
-                <SelectValue placeholder="Choose your profile..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Money-Mike">Money-Mike 🪙</SelectItem>
-                <SelectItem value="The Professor">The Professor 🧠</SelectItem>
-                <SelectItem value="Mr. Gut-Feeling">Mr. Gut-Feeling 🔮</SelectItem>
-                <SelectItem value="The Jinx">The Jinx 🪞</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
           <div className="space-y-4 p-4 rounded-md border-l-4 border-neon-cyan bg-card/50">
             <Label htmlFor="lock" className="font-display text-neon-cyan">
               LOCK (100 CHIPS)
