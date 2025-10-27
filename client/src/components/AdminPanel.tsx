@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { CheckCircle2, XCircle, Snowflake, Coins } from "lucide-react";
 
 interface PendingPick {
   id: string;
@@ -63,22 +63,23 @@ export default function AdminPanel({
                       {pick.pickType}
                     </Badge>
                     {pick.isFaded && (
-                      <span className="text-lg" data-testid={`icon-faded-${pick.id}`}>
-                        🥶
-                      </span>
+                      <Snowflake className="w-5 h-5 text-primary" data-testid={`icon-faded-${pick.id}`} />
                     )}
                   </div>
-                  <p className="font-medium" data-testid={`text-player-${pick.id}`}>
+                  <p className="font-semibold text-lg" data-testid={`text-player-${pick.id}`}>
                     {pick.playerName}
                   </p>
-                  <p className="text-sm text-muted-foreground" data-testid={`text-pick-${pick.id}`}>
+                  <p className="text-base text-muted-foreground font-medium" data-testid={`text-pick-${pick.id}`}>
                     {pick.pick}
                   </p>
-                  <p className="text-sm" data-testid={`text-chips-${pick.id}`}>
-                    🪙 {pick.chips} chips
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <Coins className="w-4 h-4 text-primary" />
+                    <p className="text-sm font-medium" data-testid={`text-chips-${pick.id}`}>
+                      {pick.chips} chips
+                    </p>
+                  </div>
                   {pick.isFaded && pick.fadedBy.length > 0 && (
-                    <p className="text-xs text-muted-foreground" data-testid={`text-faded-by-${pick.id}`}>
+                    <p className="text-sm text-muted-foreground" data-testid={`text-faded-by-${pick.id}`}>
                       Faded by: {pick.fadedBy.join(", ")}
                     </p>
                   )}

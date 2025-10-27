@@ -1,4 +1,5 @@
 import { Card } from "@/components/ui/card";
+import { Crown, Frown, Coins } from "lucide-react";
 
 export type PlayerAvatar = "brain" | "crystal" | "dollar" | "mirror";
 
@@ -67,13 +68,13 @@ export default function PlayerCard({
       data-testid={`card-player-${name.toLowerCase().replace(/\s+/g, '-')}`}
     >
       {isFirst && (
-        <div className="absolute -top-3 -right-3 text-4xl" data-testid="icon-rank-first">
-          👑
+        <div className="absolute -top-3 -right-3" data-testid="icon-rank-first">
+          <Crown className="w-10 h-10 text-neon-yellow fill-neon-yellow" />
         </div>
       )}
       {isLast && (
-        <div className="absolute -top-3 -right-3 text-4xl" data-testid="icon-rank-last">
-          🤡
+        <div className="absolute -top-3 -right-3" data-testid="icon-rank-last">
+          <Frown className="w-10 h-10 text-destructive" />
         </div>
       )}
 
@@ -89,10 +90,8 @@ export default function PlayerCard({
           {name}
         </h3>
 
-        <div className="flex items-center gap-2">
-          <span className="text-3xl" data-testid="icon-chip">
-            🪙
-          </span>
+        <div className="flex items-center gap-3">
+          <Coins className="w-8 h-8 text-primary" data-testid="icon-chip" />
           <span
             className="text-3xl font-bold text-foreground"
             data-testid={`text-chips-${name.toLowerCase().replace(/\s+/g, '-')}`}

@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Snowflake, CheckCircle2, XCircle, Coins } from "lucide-react";
 import { useState } from "react";
 
 export type PickType = "LOCK" | "SIDE" | "LOTTO";
@@ -83,29 +84,23 @@ export default function PickCard({
                 {pickType}
               </Badge>
               {isFaded && (
-                <span className="text-xl" data-testid="icon-faded">
-                  🥶
-                </span>
+                <Snowflake className="w-5 h-5 text-primary" data-testid="icon-faded" />
               )}
               {status === "win" && (
-                <span className="text-xl" data-testid="icon-win">
-                  ✅
-                </span>
+                <CheckCircle2 className="w-5 h-5 text-neon-green" data-testid="icon-win" />
               )}
               {status === "loss" && (
-                <span className="text-xl" data-testid="icon-loss">
-                  ❌
-                </span>
+                <XCircle className="w-5 h-5 text-destructive" data-testid="icon-loss" />
               )}
             </div>
             <p
-              className="text-sm text-muted-foreground mb-1"
+              className="text-sm text-muted-foreground mb-1 font-medium"
               data-testid={`text-player-${playerName.toLowerCase().replace(/\s+/g, '-')}`}
             >
               {playerName}
             </p>
             <p
-              className="text-base font-medium text-foreground"
+              className="text-lg font-semibold text-foreground"
               data-testid={`text-pick-${playerName.toLowerCase().replace(/\s+/g, '-')}`}
             >
               {pick}
@@ -121,21 +116,19 @@ export default function PickCard({
               className="border-neon-magenta text-neon-magenta hover:bg-neon-magenta hover:text-background"
               data-testid={`button-fade-${playerName.toLowerCase().replace(/\s+/g, '-')}`}
             >
-              {isFaded ? "FADED 🥶" : "FADE"}
+              {isFaded ? "FADED" : "FADE"}
             </Button>
           )}
         </div>
 
         {isFaded && fadedBy.length > 0 && (
-          <p className="text-xs text-muted-foreground" data-testid="text-faded-by">
+          <p className="text-sm text-muted-foreground" data-testid="text-faded-by">
             Faded by: {fadedBy.join(", ")}
           </p>
         )}
 
         <div className="flex items-center gap-2 pt-2 border-t border-border">
-          <span className="text-lg" data-testid="icon-chip-amount">
-            🪙
-          </span>
+          <Coins className="w-5 h-5 text-primary" data-testid="icon-chip-amount" />
           <span
             className="font-bold text-foreground"
             data-testid={`text-chip-amount-${chips}`}
