@@ -182,6 +182,8 @@ export class MemStorage implements IStorage {
     const pick: Pick = {
       id,
       ...insertPick,
+      sportKey: insertPick.sportKey ?? null,
+      gameId: insertPick.gameId ?? null,
       status: "pending",
       createdAt: new Date(),
     };

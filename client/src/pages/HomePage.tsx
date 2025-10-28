@@ -404,6 +404,7 @@ export default function HomePage() {
               onResolveLoss={(id) => resolvePickMutation.mutate({ pickId: id, status: "loss" })}
               onFetchGames={(sportKey) => fetchGamesMutation.mutate(sportKey)}
               isFetchingGames={fetchGamesMutation.isPending}
+              currentWeek={activeWeek}
             />
           )}
         </section>

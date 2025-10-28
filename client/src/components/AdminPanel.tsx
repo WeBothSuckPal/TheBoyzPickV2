@@ -28,6 +28,7 @@ interface AdminPanelProps {
   onResolveLoss?: (pickId: string) => void;
   onFetchGames?: (sportKey: string) => void;
   isFetchingGames?: boolean;
+  currentWeek?: { weekNumber: number; };
 }
 
 const SPORTS = [
@@ -44,6 +45,7 @@ export default function AdminPanel({
   onResolveLoss,
   onFetchGames,
   isFetchingGames = false,
+  currentWeek,
 }: AdminPanelProps) {
   const [selectedSport, setSelectedSport] = useState("americanfootball_ncaaf");
 
@@ -64,9 +66,19 @@ export default function AdminPanel({
   return (
     <Card className="p-6 border-2 border-destructive" data-testid="card-admin-panel">
       <div className="mb-6">
-        <h3 className="text-2xl font-display text-destructive mb-4">
-          ADMIN PANEL
-        </h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-2xl font-display text-destructive">
+            ADMIN PANEL
+          </h3>
+          {currentWeek && (
+            <Badge variant="outline" className="font-display text-sm" data-testid="badge-current-week">
+              Week {currentWeek.weekNumber}
+            </Badge>
+          )}
+        </div>
+        <p className="text-sm text-muted-foreground mb-4">
+          Weeks are automatically determined by date. Fetch games for the current week below.
+        </p>
         
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 space-y-2">
