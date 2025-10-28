@@ -52,6 +52,7 @@ export interface IStorage {
   getGamesByIds(ids: string[]): Promise<Game[]>;
   createGame(game: InsertGame): Promise<Game>;
   deleteGamesByWeek(weekId: string): Promise<void>;
+  deleteGamesByWeekAndSport(weekId: string, sportKey: string): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -282,6 +283,13 @@ export class MemStorage implements IStorage {
       .map((g) => g.id);
     gameIds.forEach((id) => this.games.delete(id));
   }
+
+  async deleteGamesByWeekAndSport(weekId: string, sportKey: string): Promise<void> {
+    const gameIds = Array.from(this.games.values())
+      .filter((g) => g.weekId === weekId && g.sportKey === sportKey)
+      .map((g) => g.id);
+    gameIds.forEach((id) => this.games.delete(id));
+  }
 }
 
 export class DbStorage implements IStorage {
@@ -405,6 +413,12 @@ export class DbStorage implements IStorage {
 
   async deleteGamesByWeek(weekId: string): Promise<void> {
     await db.delete(gamesTable).where(eq(gamesTable.weekId, weekId));
+  }
+
+  async deleteGamesByWeekAndSport(weekId: string, sportKey: string): Promise<void> {
+    await db.delete(gamesTable).where(
+      and(eq(gamesTable.weekId, weekId), eq(gamesTable.sportKey, sportKey))
+    );
   }
 }
 

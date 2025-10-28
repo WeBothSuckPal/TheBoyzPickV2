@@ -1,6 +1,15 @@
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { CheckCircle2, XCircle, Snowflake, Coins, Download } from "lucide-react";
 
 interface PendingPick {
@@ -17,9 +26,17 @@ interface AdminPanelProps {
   pendingPicks?: PendingPick[];
   onResolveWin?: (pickId: string) => void;
   onResolveLoss?: (pickId: string) => void;
-  onFetchGames?: () => void;
+  onFetchGames?: (sportKey: string) => void;
   isFetchingGames?: boolean;
 }
+
+const SPORTS = [
+  { key: "americanfootball_ncaaf", label: "College Football (NCAAF)" },
+  { key: "americanfootball_nfl", label: "NFL" },
+  { key: "baseball_mlb", label: "MLB" },
+  { key: "basketball_ncaab", label: "Men's College Basketball" },
+  { key: "basketball_nba", label: "NBA" },
+];
 
 export default function AdminPanel({
   pendingPicks = [],
@@ -28,6 +45,8 @@ export default function AdminPanel({
   onFetchGames,
   isFetchingGames = false,
 }: AdminPanelProps) {
+  const [selectedSport, setSelectedSport] = useState("americanfootball_ncaaf");
+
   const handleWin = (pickId: string) => {
     console.log(`Resolved pick ${pickId} as WIN`);
     onResolveWin?.(pickId);
@@ -38,21 +57,46 @@ export default function AdminPanel({
     onResolveLoss?.(pickId);
   };
 
+  const handleFetchGames = () => {
+    onFetchGames?.(selectedSport);
+  };
+
   return (
     <Card className="p-6 border-2 border-destructive" data-testid="card-admin-panel">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-2xl font-display text-destructive">
+      <div className="mb-6">
+        <h3 className="text-2xl font-display text-destructive mb-4">
           ADMIN PANEL
         </h3>
-        <Button
-          onClick={onFetchGames}
-          disabled={isFetchingGames}
-          className="bg-primary text-primary-foreground font-display"
-          data-testid="button-fetch-games"
-        >
-          <Download className="w-4 h-4 mr-2" />
-          {isFetchingGames ? "Fetching..." : "Fetch Games"}
-        </Button>
+        
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1 space-y-2">
+            <Label className="font-display text-sm">Sport</Label>
+            <Select value={selectedSport} onValueChange={setSelectedSport}>
+              <SelectTrigger data-testid="select-sport">
+                <SelectValue placeholder="Select sport" />
+              </SelectTrigger>
+              <SelectContent>
+                {SPORTS.map((sport) => (
+                  <SelectItem key={sport.key} value={sport.key}>
+                    {sport.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="flex items-end">
+            <Button
+              onClick={handleFetchGames}
+              disabled={isFetchingGames}
+              className="bg-primary text-primary-foreground font-display w-full md:w-auto"
+              data-testid="button-fetch-games"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              {isFetchingGames ? "Fetching..." : "Fetch Games"}
+            </Button>
+          </div>
+        </div>
       </div>
 
       <h4 className="text-lg font-display text-destructive mb-4">

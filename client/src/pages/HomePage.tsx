@@ -170,14 +170,14 @@ export default function HomePage() {
   });
 
   const fetchGamesMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (sportKey: string) => {
       if (!activeWeek?.id) throw new Error("No active week found");
-      return await apiRequest("POST", "/api/admin/fetch-games", { weekId: activeWeek.id });
+      return await apiRequest("POST", "/api/admin/fetch-games", { weekId: activeWeek.id, sportKey });
     },
     onSuccess: (data) => {
       toast({ 
         title: "Games fetched successfully!", 
-        description: `Loaded ${data.count} games from The Odds API`,
+        description: `Loaded ${data.count} ${data.sport || ''} games from The Odds API`,
       });
     },
     onError: (error: any) => {

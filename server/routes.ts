@@ -329,9 +329,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const { weekId } = req.body;
+      const { weekId, sportKey = "americanfootball_ncaaf" } = req.body;
       if (!weekId) {
         return res.status(400).json({ error: "weekId is required" });
+      }
+
+      const validSportKeys = [
+        "americanfootball_ncaaf",
+        "americanfootball_nfl",
+        "baseball_mlb",
+        "basketball_ncaab",
+        "basketball_nba",
+      ];
+
+      if (!validSportKeys.includes(sportKey)) {
+        return res.status(400).json({ error: "Invalid sport key" });
       }
 
       const apiKey = process.env.ODDS_API_KEY;
@@ -340,7 +352,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const response = await fetch(
-        `https://api.the-odds-api.com/v4/sports/americanfootball_ncaaf/odds?apiKey=${apiKey}&regions=us&markets=spreads,totals&oddsFormat=american`
+        `https://api.the-odds-api.com/v4/sports/${sportKey}/odds?apiKey=${apiKey}&regions=us&markets=spreads,totals&oddsFormat=american`
       );
 
       if (!response.ok) {
@@ -349,7 +361,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const oddsData = await response.json();
 
-      await storage.deleteGamesByWeek(weekId);
+      await storage.deleteGamesByWeekAndSport(weekId, sportKey);
 
       const createdGames = [];
       for (const game of oddsData) {
@@ -389,9 +401,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         createdGames.push(createdGame);
       }
 
+      const sportLabels: Record<string, string> = {
+        "americanfootball_ncaaf": "College Football",
+        "americanfootball_nfl": "NFL",
+        "baseball_mlb": "MLB",
+        "basketball_ncaab": "Men's College Basketball",
+        "basketball_nba": "NBA",
+      };
+
       res.json({ 
         success: true, 
         count: createdGames.length,
+        sport: sportLabels[sportKey] || sportKey,
         games: createdGames,
       });
     } catch (error: any) {
