@@ -11,8 +11,16 @@ import {
   type InsertChatMessage,
   type Game,
   type InsertGame,
+  players as playersTable,
+  weeks as weeksTable,
+  picks as picksTable,
+  fades as fadesTable,
+  chatMessages as chatMessagesTable,
+  games as gamesTable,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
+import { db } from "./db";
+import { eq, and, inArray } from "drizzle-orm";
 
 export interface IStorage {
   getPlayers(): Promise<Player[]>;
@@ -41,6 +49,7 @@ export interface IStorage {
 
   getGames(weekId: string): Promise<Game[]>;
   getGame(id: string): Promise<Game | undefined>;
+  getGamesByIds(ids: string[]): Promise<Game[]>;
   createGame(game: InsertGame): Promise<Game>;
   deleteGamesByWeek(weekId: string): Promise<void>;
 }
@@ -246,6 +255,10 @@ export class MemStorage implements IStorage {
     return this.games.get(id);
   }
 
+  async getGamesByIds(ids: string[]): Promise<Game[]> {
+    return ids.map(id => this.games.get(id)).filter((g): g is Game => g !== undefined);
+  }
+
   async createGame(insertGame: InsertGame): Promise<Game> {
     const game: Game = {
       id: insertGame.id,
@@ -271,4 +284,128 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export class DbStorage implements IStorage {
+  async getPlayers(): Promise<Player[]> {
+    return await db.select().from(playersTable).orderBy(playersTable.chips);
+  }
+
+  async getPlayer(id: string): Promise<Player | undefined> {
+    const results = await db.select().from(playersTable).where(eq(playersTable.id, id));
+    return results[0];
+  }
+
+  async getPlayerByName(name: string): Promise<Player | undefined> {
+    const results = await db.select().from(playersTable).where(eq(playersTable.name, name));
+    return results[0];
+  }
+
+  async createPlayer(insertPlayer: InsertPlayer): Promise<Player> {
+    const results = await db.insert(playersTable).values(insertPlayer).returning();
+    return results[0];
+  }
+
+  async updatePlayerChips(playerId: string, chips: number): Promise<Player | undefined> {
+    const results = await db.update(playersTable)
+      .set({ chips })
+      .where(eq(playersTable.id, playerId))
+      .returning();
+    return results[0];
+  }
+
+  async getWeeks(): Promise<Week[]> {
+    return await db.select().from(weeksTable);
+  }
+
+  async getActiveWeek(): Promise<Week | undefined> {
+    const results = await db.select().from(weeksTable).where(eq(weeksTable.isActive, true));
+    return results[0];
+  }
+
+  async createWeek(week: InsertWeek): Promise<Week> {
+    const results = await db.insert(weeksTable).values(week).returning();
+    return results[0];
+  }
+
+  async setActiveWeek(weekId: string): Promise<void> {
+    await db.update(weeksTable).set({ isActive: false });
+    await db.update(weeksTable).set({ isActive: true }).where(eq(weeksTable.id, weekId));
+  }
+
+  async getPicks(weekId: string): Promise<Pick[]> {
+    return await db.select().from(picksTable).where(eq(picksTable.weekId, weekId));
+  }
+
+  async getPicksByPlayer(weekId: string, playerId: string): Promise<Pick[]> {
+    return await db.select().from(picksTable).where(
+      and(eq(picksTable.weekId, weekId), eq(picksTable.playerId, playerId))
+    );
+  }
+
+  async createPick(pick: InsertPick): Promise<Pick> {
+    const results = await db.insert(picksTable).values(pick).returning();
+    return results[0];
+  }
+
+  async updatePickStatus(pickId: string, status: "pending" | "win" | "loss"): Promise<Pick | undefined> {
+    const results = await db.update(picksTable)
+      .set({ status })
+      .where(eq(picksTable.id, pickId))
+      .returning();
+    return results[0];
+  }
+
+  async getFades(weekId: string): Promise<Fade[]> {
+    return await db.select().from(fadesTable).where(eq(fadesTable.weekId, weekId));
+  }
+
+  async getFadesByPlayer(weekId: string, playerId: string): Promise<Fade[]> {
+    return await db.select().from(fadesTable).where(
+      and(eq(fadesTable.weekId, weekId), eq(fadesTable.playerId, playerId))
+    );
+  }
+
+  async getFadesForPick(pickId: string): Promise<Fade[]> {
+    return await db.select().from(fadesTable).where(eq(fadesTable.targetPickId, pickId));
+  }
+
+  async createFade(fade: InsertFade): Promise<Fade> {
+    const results = await db.insert(fadesTable).values(fade).returning();
+    return results[0];
+  }
+
+  async getChatMessages(limit: number = 100): Promise<ChatMessage[]> {
+    return await db.select().from(chatMessagesTable).orderBy(chatMessagesTable.createdAt).limit(limit);
+  }
+
+  async createChatMessage(message: InsertChatMessage): Promise<ChatMessage> {
+    const results = await db.insert(chatMessagesTable).values(message).returning();
+    return results[0];
+  }
+
+  async getGames(weekId: string): Promise<Game[]> {
+    return await db.select().from(gamesTable)
+      .where(eq(gamesTable.weekId, weekId))
+      .orderBy(gamesTable.commenceTime);
+  }
+
+  async getGame(id: string): Promise<Game | undefined> {
+    const results = await db.select().from(gamesTable).where(eq(gamesTable.id, id));
+    return results[0];
+  }
+
+  async getGamesByIds(ids: string[]): Promise<Game[]> {
+    if (ids.length === 0) return [];
+    return await db.select().from(gamesTable).where(inArray(gamesTable.id, ids));
+  }
+
+  async createGame(game: InsertGame): Promise<Game> {
+    const results = await db.insert(gamesTable).values(game).returning();
+    return results[0];
+  }
+
+  async deleteGamesByWeek(weekId: string): Promise<void> {
+    await db.delete(gamesTable).where(eq(gamesTable.weekId, weekId));
+  }
+}
+
+export const storage = new DbStorage();

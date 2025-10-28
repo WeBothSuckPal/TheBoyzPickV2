@@ -117,7 +117,7 @@ export default function HomePage() {
   useWebSocket(handleWebSocketMessage);
 
   const submitPicksMutation = useMutation({
-    mutationFn: async (data: { playerId: string; lock: string; side: string; lotto: string }) => {
+    mutationFn: async (data: { playerId: string; lock: string; side: string; lotto: string; lockGameId: string; sideGameId: string; lottoGameId: string }) => {
       return await apiRequest("POST", "/api/picks", data);
     },
     onSuccess: () => {
@@ -232,6 +232,9 @@ export default function HomePage() {
       lock: picksData.lock,
       side: picksData.side,
       lotto: picksData.lotto,
+      lockGameId: picksData.lockGameId,
+      sideGameId: picksData.sideGameId,
+      lottoGameId: picksData.lottoGameId,
     });
   };
 

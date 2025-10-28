@@ -36,6 +36,9 @@ interface PickSubmission {
   lock: string;
   side: string;
   lotto: string;
+  lockGameId: string;
+  sideGameId: string;
+  lottoGameId: string;
 }
 
 interface PickSubmissionDialogProps {
@@ -95,6 +98,9 @@ export default function PickSubmissionDialog({ onSubmit, weekId }: PickSubmissio
       lock: getPickText(lockGameId, lockPick),
       side: getPickText(sideGameId, sidePick),
       lotto: getPickText(lottoGameId, lottoPick),
+      lockGameId,
+      sideGameId,
+      lottoGameId,
     };
     console.log("Submitted picks:", picks);
     onSubmit?.(picks);
@@ -108,8 +114,19 @@ export default function PickSubmissionDialog({ onSubmit, weekId }: PickSubmissio
   const isValid = lockText.length > 0 && sideText.length > 0 && lottoText.length > 0;
 
   const getGameOptions = (selectedGameIds: string[]) => {
-    return games.filter(game => !selectedGameIds.includes(game.id));
+    const now = new Date();
+    return games.filter(game => {
+      const gameStarted = new Date(game.commenceTime) <= now;
+      return !selectedGameIds.includes(game.id) && !gameStarted;
+    });
   };
+
+  const earliestGameTime = games.length > 0
+    ? games.reduce((earliest, game) => {
+        const gameTime = new Date(game.commenceTime);
+        return gameTime < earliest ? gameTime : earliest;
+      }, new Date(games[0].commenceTime))
+    : null;
 
   const renderGameSelect = (
     value: string,
@@ -231,6 +248,11 @@ export default function PickSubmissionDialog({ onSubmit, weekId }: PickSubmissio
           </DialogTitle>
           <DialogDescription>
             Select your three picks for this week. Remember: LOCK (100 chips), SIDE (50 chips), LOTTO (10 chips).
+            {earliestGameTime && (
+              <div className="mt-2 text-sm text-neon-yellow">
+                ⚠ First game starts: {format(earliestGameTime, "EEE M/d h:mm a")}
+              </div>
+            )}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-6 mt-4">

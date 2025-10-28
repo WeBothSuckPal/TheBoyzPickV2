@@ -4,6 +4,28 @@
 
 The Parlay-Vous Lounge is a retro neon-lit digital speakeasy for tracking sports picks, chips, and trash talk among friends. It's a free, fun gambling pick-tracker where 4 players compete weekly by submitting three types of picks (LOCK, SIDE, LOTTO), with real-time features like "FADE" voting and consensus tracking. The application features a 1980s arcade aesthetic with electric blue and hot pink neon glows, dark mode backgrounds, and competitive energy through player rankings and chip counts.
 
+## Recent Changes (October 2025)
+
+### The Odds API Integration
+- Integrated The Odds API for fetching live NCAAF game data (spreads, totals, commence times)
+- Admin panel "Fetch Games" button pulls current week's games from americanfootball_ncaaf sport
+- Games stored in PostgreSQL with spreads/totals from first available bookmaker
+- Pick submission now game-based instead of free-form text entry
+
+### Pick Deadlines
+- Implemented automatic pick deadlines based on game commence times
+- Backend validation prevents submitting picks after any game has started
+- Frontend filters out started games from selection dropdown
+- Dialog shows earliest game deadline with warning message
+- All gameIds are required and validated server-side to prevent deadline bypass
+- Pick-game association tracked via gameId column in picks table
+
+### Admin Authentication
+- Password-protected admin panel using session-based authentication
+- Admin password stored as ADMIN_PASSWORD environment secret
+- Session persists across page reloads using HttpOnly cookies
+- Only authenticated admins can fetch games and manage week settings
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
@@ -54,9 +76,11 @@ Preferred communication style: Simple, everyday language.
 **Database**: PostgreSQL (configured via Neon serverless driver) with schema including:
 - `players` table: User profiles with chips, avatars, names
 - `weeks` table: Betting week tracking with active status
-- `picks` table: Three pick types per player per week (LOCK/SIDE/LOTTO) with status tracking
+- `picks` table: Three pick types per player per week (LOCK/SIDE/LOTTO) with status tracking and gameId linking to games table
 - `fades` table: Player votes against other players' LOCK picks
 - `chat_messages` table: Real-time chat history
+- `games` table: NCAAF games fetched from The Odds API with spreads, totals, and commence times
+- `users` table: Admin user credentials for password-protected admin panel
 
 **In-Memory Fallback**: MemStorage class implementation for development/testing without database
 

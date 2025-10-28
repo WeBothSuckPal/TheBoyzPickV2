@@ -96,10 +96,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "No active week" });
       }
 
-      const { playerId, lock, side, lotto } = req.body;
+      const { playerId, lock, side, lotto, lockGameId, sideGameId, lottoGameId } = req.body;
 
       if (!playerId || !lock || !side || !lotto) {
         return res.status(400).json({ error: "All picks are required" });
+      }
+
+      // Require all gameIds to prevent deadline bypass
+      if (!lockGameId || !sideGameId || !lottoGameId) {
+        return res.status(400).json({ error: "Game IDs are required for all picks" });
       }
 
       const existingPicks = await storage.getPicksByPlayer(
@@ -112,12 +117,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .json({ error: "Player has already submitted picks this week" });
       }
 
+      // Validate all games exist and haven't started
+      const gameIds = [lockGameId, sideGameId, lottoGameId];
+      const games = await storage.getGamesByIds(gameIds);
+      
+      if (games.length !== 3) {
+        return res.status(400).json({ error: "One or more invalid game IDs" });
+      }
+
+      const now = new Date();
+      const startedGame = games.find(game => new Date(game.commenceTime) <= now);
+      if (startedGame) {
+        return res.status(400).json({ 
+          error: `Cannot submit picks after game has started (${startedGame.awayTeam} @ ${startedGame.homeTeam})` 
+        });
+      }
+
       const lockPick = await storage.createPick(
         insertPickSchema.parse({
           weekId: activeWeek.id,
           playerId,
           pickType: "LOCK",
           pick: lock,
+          gameId: lockGameId,
           chips: 100,
         })
       );
@@ -128,6 +150,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           playerId,
           pickType: "SIDE",
           pick: side,
+          gameId: sideGameId,
           chips: 50,
         })
       );
@@ -138,6 +161,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           playerId,
           pickType: "LOTTO",
           pick: lotto,
+          gameId: lottoGameId,
           chips: 10,
         })
       );
