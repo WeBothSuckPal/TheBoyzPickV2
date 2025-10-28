@@ -6,7 +6,19 @@ The Parlay-Vous Lounge is a retro neon-lit digital speakeasy for tracking sports
 
 ## Recent Changes (October 2025)
 
-### Multi-Sport Support (Latest)
+### Automatic Player Seeding & Week Management (Latest - Oct 28)
+- **Player Auto-Initialization**: Database automatically seeds 4 default players (Carter, Chub, Perky, Jerry Fader) on first startup, each with 1,000 starting chips
+- **Automatic Week System**: Weeks are now auto-created based on current date (no manual week creation needed)
+  - Season starts Sept 1, 2025 (configurable via SEASON_START_DATE in weekUtils.ts)
+  - getCurrentWeek() calculates week number from season start and auto-creates weeks
+  - Week display shows date range (e.g., "Week 9 (Oct 27 - Nov 2)")
+  - Admin panel displays current week info automatically
+- **Code Quality**: Fixed all LSP errors in HomePage.tsx, queryClient.ts, and storage.ts
+  - apiRequest now returns parsed JSON instead of Response objects
+  - Proper type annotations for mutations and callbacks
+  - Nullable field handling in MemStorage
+
+### Multi-Sport Support
 - Expanded from NCAAF-only to 5 sports: College Football, NFL, MLB, Men's College Basketball, NBA
 - Admin panel sport selector dropdown for fetching games from different sports
 - Sport-aware game deletion: fetching one sport doesn't erase games from other sports (deleteGamesByWeekAndSport)
