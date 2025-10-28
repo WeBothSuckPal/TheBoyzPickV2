@@ -3,11 +3,12 @@ import { weeks, type Week } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { log } from "./vite";
 
-// Season start date - configurable via environment variable
-// Default to September 1, 2025 (start of typical football season)
+// NFL Season start date - configurable via environment variable
+// Default to September 4, 2025 (2025 NFL regular season kickoff)
+// NFL season typically starts first Thursday of September
 const SEASON_START = process.env.SEASON_START_DATE 
   ? new Date(process.env.SEASON_START_DATE)
-  : new Date('2025-09-01');
+  : new Date('2025-09-04');
 
 /**
  * Calculate the current week number based on the current date
