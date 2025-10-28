@@ -6,11 +6,23 @@ The Parlay-Vous Lounge is a retro neon-lit digital speakeasy for tracking sports
 
 ## Recent Changes (October 2025)
 
+### Multi-Sport Support (Latest)
+- Expanded from NCAAF-only to 5 sports: College Football, NFL, MLB, Men's College Basketball, NBA
+- Admin panel sport selector dropdown for fetching games from different sports
+- Sport-aware game deletion: fetching one sport doesn't erase games from other sports (deleteGamesByWeekAndSport)
+- SportKey column added to picks table for persistent sport tracking
+- Picks retain sport information even after games are refreshed/deleted
+- Pick submission dialog includes sport filter dropdown (shows when multiple sports available)
+- Each pick displays sport icon and label (Trophy/Shield/CircleDot/Activity with color coding)
+- Backend stores sportKey from game at pick submission time for immutability
+- Frontend sport filtering in game selection and pick display
+
 ### The Odds API Integration
-- Integrated The Odds API for fetching live NCAAF game data (spreads, totals, commence times)
-- Admin panel "Fetch Games" button pulls current week's games from americanfootball_ncaaf sport
+- Integrated The Odds API for fetching live game data (spreads, totals, commence times)
+- Admin panel "Fetch Games" button pulls current week's games for selected sport
 - Games stored in PostgreSQL with spreads/totals from first available bookmaker
 - Pick submission now game-based instead of free-form text entry
+- Supports multiple sports via sportKey parameter in API calls
 
 ### Pick Deadlines
 - Implemented automatic pick deadlines based on game commence times
