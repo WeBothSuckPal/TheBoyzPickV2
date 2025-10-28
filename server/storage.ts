@@ -21,6 +21,7 @@ import {
 import { randomUUID } from "crypto";
 import { db } from "./db";
 import { eq, and, inArray } from "drizzle-orm";
+import { getCurrentWeek } from "./weekUtils";
 
 export interface IStorage {
   getPlayers(): Promise<Player[]>;
@@ -325,8 +326,8 @@ export class DbStorage implements IStorage {
   }
 
   async getActiveWeek(): Promise<Week | undefined> {
-    const results = await db.select().from(weeksTable).where(eq(weeksTable.isActive, true));
-    return results[0];
+    // Auto-create and return the current week based on date
+    return await getCurrentWeek();
   }
 
   async createWeek(week: InsertWeek): Promise<Week> {

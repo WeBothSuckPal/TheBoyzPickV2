@@ -1,6 +1,7 @@
 import { db } from "./db";
 import { players, type InsertPlayer } from "@shared/schema";
 import { log } from "./vite";
+import { getCurrentWeek, formatWeekDisplay } from "./weekUtils";
 
 const DEFAULT_PLAYERS: InsertPlayer[] = [
   { name: "Carter", chips: 1000, avatar: "dollar" },
@@ -26,6 +27,10 @@ export async function seedDatabase() {
     } else {
       log(`Database already contains ${existingPlayers.length} players. Skipping seed.`);
     }
+    
+    // Ensure current week exists (auto-create if needed)
+    const currentWeek = await getCurrentWeek();
+    log(`Current week: ${formatWeekDisplay(currentWeek.weekNumber)}`);
   } catch (error) {
     console.error("Error seeding database:", error);
     // Don't throw - we want the server to start even if seeding fails
