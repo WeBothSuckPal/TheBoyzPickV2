@@ -170,7 +170,11 @@ export default function HomePage() {
     },
   });
 
-  const fetchGamesMutation = useMutation({
+  const fetchGamesMutation = useMutation<
+    { success: boolean; count: number; sport: string; games: any[] },
+    Error,
+    string
+  >({
     mutationFn: async (sportKey: string) => {
       if (!activeWeek?.id) throw new Error("No active week found");
       return await apiRequest("POST", "/api/admin/fetch-games", { weekId: activeWeek.id, sportKey });
@@ -398,7 +402,7 @@ export default function HomePage() {
               }))}
               onResolveWin={(id) => resolvePickMutation.mutate({ pickId: id, status: "win" })}
               onResolveLoss={(id) => resolvePickMutation.mutate({ pickId: id, status: "loss" })}
-              onFetchGames={() => fetchGamesMutation.mutate()}
+              onFetchGames={(sportKey) => fetchGamesMutation.mutate(sportKey)}
               isFetchingGames={fetchGamesMutation.isPending}
             />
           )}
