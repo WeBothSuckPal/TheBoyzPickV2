@@ -17,8 +17,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus } from "lucide-react";
+import { Plus, Trophy, Football, Baseball, TrendingUp } from "lucide-react";
 import { format } from "date-fns";
+
+const SPORT_CONFIG = {
+  "americanfootball_ncaaf": { label: "College Football", icon: Trophy, color: "text-neon-cyan" },
+  "americanfootball_nfl": { label: "NFL", icon: Football, color: "text-neon-magenta" },
+  "baseball_mlb": { label: "MLB", icon: Baseball, color: "text-neon-yellow" },
+  "basketball_ncaab": { label: "Men's College Basketball", icon: TrendingUp, color: "text-neon-green" },
+  "basketball_nba": { label: "NBA", icon: TrendingUp, color: "text-orange-400" },
+} as const;
 
 interface Game {
   id: string;
@@ -48,6 +56,7 @@ interface PickSubmissionDialogProps {
 
 export default function PickSubmissionDialog({ onSubmit, weekId }: PickSubmissionDialogProps) {
   const [open, setOpen] = useState(false);
+  const [sportFilter, setSportFilter] = useState<string>("all");
   const [lockGameId, setLockGameId] = useState("");
   const [lockPick, setLockPick] = useState("");
   const [sideGameId, setSideGameId] = useState("");
@@ -67,6 +76,7 @@ export default function PickSubmissionDialog({ onSubmit, weekId }: PickSubmissio
 
   useEffect(() => {
     if (!open) {
+      setSportFilter("all");
       setLockGameId("");
       setLockPick("");
       setSideGameId("");
@@ -117,9 +127,14 @@ export default function PickSubmissionDialog({ onSubmit, weekId }: PickSubmissio
     const now = new Date();
     return games.filter(game => {
       const gameStarted = new Date(game.commenceTime) <= now;
-      return !selectedGameIds.includes(game.id) && !gameStarted;
+      const matchesSportFilter = sportFilter === "all" || game.sportKey === sportFilter;
+      return !selectedGameIds.includes(game.id) && !gameStarted && matchesSportFilter;
     });
   };
+
+  const availableSports = Array.from(new Set(games.map(g => g.sportKey)))
+    .filter(sportKey => sportKey in SPORT_CONFIG)
+    .sort();
 
   const earliestGameTime = games.length > 0
     ? games.reduce((earliest, game) => {
@@ -158,18 +173,27 @@ export default function PickSubmissionDialog({ onSubmit, weekId }: PickSubmissio
                 {gamesError ? "Error loading games" : "No games available"}
               </SelectItem>
             )}
-            {availableGames.map((game) => (
-              <SelectItem key={game.id} value={game.id}>
-                <div className="text-sm">
-                  <div className="font-medium">
-                    {game.awayTeam} @ {game.homeTeam}
+            {availableGames.map((game) => {
+              const sportConfig = SPORT_CONFIG[game.sportKey as keyof typeof SPORT_CONFIG];
+              const SportIcon = sportConfig?.icon || Trophy;
+              return (
+                <SelectItem key={game.id} value={game.id}>
+                  <div className="flex items-start gap-2 text-sm">
+                    <SportIcon className={`w-4 h-4 mt-0.5 ${sportConfig?.color || ''}`} />
+                    <div className="flex-1">
+                      <div className="font-medium">
+                        {game.awayTeam} @ {game.homeTeam}
+                      </div>
+                      <div className="text-xs text-muted-foreground flex items-center gap-2">
+                        <span>{sportConfig?.label || game.sportKey}</span>
+                        <span>•</span>
+                        <span>{format(new Date(game.commenceTime), "EEE M/d h:mm a")}</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    {format(new Date(game.commenceTime), "EEE M/d h:mm a")}
-                  </div>
-                </div>
-              </SelectItem>
-            ))}
+                </SelectItem>
+              );
+            })}
           </SelectContent>
         </Select>
       </div>
@@ -255,6 +279,35 @@ export default function PickSubmissionDialog({ onSubmit, weekId }: PickSubmissio
             )}
           </DialogDescription>
         </DialogHeader>
+        
+        {availableSports.length > 1 && (
+          <div className="space-y-2 pt-4 border-t border-border">
+            <Label>Filter by Sport</Label>
+            <Select value={sportFilter} onValueChange={setSportFilter}>
+              <SelectTrigger data-testid="select-sport-filter">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">
+                  <span className="font-medium">All Sports</span>
+                </SelectItem>
+                {availableSports.map((sportKey) => {
+                  const sportConfig = SPORT_CONFIG[sportKey as keyof typeof SPORT_CONFIG];
+                  const SportIcon = sportConfig?.icon || Trophy;
+                  return (
+                    <SelectItem key={sportKey} value={sportKey}>
+                      <div className="flex items-center gap-2">
+                        <SportIcon className={`w-4 h-4 ${sportConfig?.color || ''}`} />
+                        <span>{sportConfig?.label || sportKey}</span>
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+        
         <form onSubmit={handleSubmit} className="space-y-6 mt-4">
           <div className="space-y-4 p-4 rounded-md border-l-4 border-neon-cyan bg-card/50">
             <div className="font-display text-neon-cyan mb-2">
