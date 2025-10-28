@@ -9,6 +9,8 @@ const app = express();
 declare module 'express-session' {
   interface SessionData {
     isAdminAuthenticated?: boolean;
+    playerId?: string;
+    playerName?: string;
   }
 }
 

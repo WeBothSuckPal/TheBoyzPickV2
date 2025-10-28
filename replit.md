@@ -6,17 +6,22 @@ The Parlay-Vous Lounge is a retro neon-lit digital speakeasy for tracking sports
 
 ## Recent Changes (October 2025)
 
-### Automatic Player Seeding & Week Management (Latest - Oct 28)
-- **Player Auto-Initialization**: Database automatically seeds 4 default players (Carter, Chub, Perky, Jerry Fader) on first startup, each with 1,000 starting chips
-- **Automatic Week System**: Weeks are now auto-created based on current date (no manual week creation needed)
-  - Season starts Sept 1, 2025 (configurable via SEASON_START_DATE in weekUtils.ts)
-  - getCurrentWeek() calculates week number from season start and auto-creates weeks
-  - Week display shows date range (e.g., "Week 9 (Oct 27 - Nov 2)")
-  - Admin panel displays current week info automatically
-- **Code Quality**: Fixed all LSP errors in HomePage.tsx, queryClient.ts, and storage.ts
-  - apiRequest now returns parsed JSON instead of Response objects
-  - Proper type annotations for mutations and callbacks
-  - Nullable field handling in MemStorage
+### Player Login System & NFL Week Tracking (Latest - Oct 28)
+- **Player Authentication**: Implemented session-based login system
+  - Each player has their own password (default: "password")
+  - Password hashing using bcryptjs for security
+  - Session-based authentication persists across page reloads
+  - Login required to access the application
+  - Authentication routes: POST /api/auth/login, GET /api/auth/status, POST /api/auth/logout
+- **NFL Week Synchronization**: Weeks now sync with actual NFL schedule
+  - Season starts Sept 4, 2025 (2025 NFL season kickoff)
+  - Currently showing Week 8 (aligned with real NFL week)
+  - Week calculation based on days since NFL season start
+  - Configurable via SEASON_START_DATE environment variable
+- **Player Auto-Initialization**: Database automatically seeds 4 default players with passwords
+  - Carter, Chub, Perky, Jerry Fader - each with 1,000 starting chips
+  - All players have hashed passwords (default: "password")
+  - Automatic seeding on first server startup
 
 ### Multi-Sport Support
 - Expanded from NCAAF-only to 5 sports: College Football, NFL, MLB, Men's College Basketball, NBA

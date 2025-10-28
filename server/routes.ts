@@ -7,6 +7,7 @@ import {
   insertFadeSchema,
   insertChatMessageSchema,
 } from "@shared/schema";
+import bcrypt from "bcryptjs";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
@@ -34,9 +35,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/players", async (_req, res) => {
     try {
       const players = await storage.getPlayers();
-      res.json(players);
+      // Remove password from response for security
+      const playersWithoutPasswords = players.map(({ password, ...player }) => player);
+      res.json(playersWithoutPasswords);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch players" });
+    }
+  });
+
+  // Player Authentication Routes
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { name, password } = req.body;
+      
+      if (!name || !password) {
+        return res.status(400).json({ error: "Name and password are required" });
+      }
+
+      const players = await storage.getPlayers();
+      const player = players.find((p) => p.name === name);
+
+      if (!player) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+
+      const isValidPassword = await bcrypt.compare(password, player.password);
+
+      if (!isValidPassword) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+
+      // Store player ID in session
+      req.session.playerId = player.id;
+      req.session.playerName = player.name;
+
+      res.json({ 
+        success: true,
+        player: {
+          id: player.id,
+          name: player.name,
+          chips: player.chips,
+          avatar: player.avatar,
+        },
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to login" });
+    }
+  });
+
+  app.get("/api/auth/status", async (req, res) => {
+    try {
+      if (!req.session.playerId) {
+        return res.json({ isAuthenticated: false });
+      }
+
+      const players = await storage.getPlayers();
+      const player = players.find((p) => p.id === req.session.playerId);
+
+      if (!player) {
+        req.session.playerId = undefined;
+        req.session.playerName = undefined;
+        return res.json({ isAuthenticated: false });
+      }
+
+      res.json({ 
+        isAuthenticated: true,
+        player: {
+          id: player.id,
+          name: player.name,
+          chips: player.chips,
+          avatar: player.avatar,
+        },
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to check auth status" });
+    }
+  });
+
+  app.post("/api/auth/logout", async (req, res) => {
+    try {
+      req.session.playerId = undefined;
+      req.session.playerName = undefined;
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to logout" });
     }
   });
 

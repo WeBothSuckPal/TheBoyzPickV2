@@ -2,12 +2,17 @@ import { db } from "./db";
 import { players, type InsertPlayer } from "@shared/schema";
 import { log } from "./vite";
 import { getCurrentWeek, formatWeekDisplay } from "./weekUtils";
+import bcrypt from "bcryptjs";
+
+// Default password for all players: "password"
+// Players can change this after first login
+const DEFAULT_PASSWORD_HASH = bcrypt.hashSync("password", 10);
 
 const DEFAULT_PLAYERS: InsertPlayer[] = [
-  { name: "Carter", chips: 1000, avatar: "dollar" },
-  { name: "Chub", chips: 1000, avatar: "brain" },
-  { name: "Perky", chips: 1000, avatar: "crystal" },
-  { name: "Jerry Fader", chips: 1000, avatar: "mirror" },
+  { name: "Carter", password: DEFAULT_PASSWORD_HASH, chips: 1000, avatar: "dollar" },
+  { name: "Chub", password: DEFAULT_PASSWORD_HASH, chips: 1000, avatar: "brain" },
+  { name: "Perky", password: DEFAULT_PASSWORD_HASH, chips: 1000, avatar: "crystal" },
+  { name: "Jerry Fader", password: DEFAULT_PASSWORD_HASH, chips: 1000, avatar: "mirror" },
 ];
 
 export async function seedDatabase() {
