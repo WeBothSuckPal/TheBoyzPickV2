@@ -133,6 +133,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Get sportKeys from games
+      const lockGame = games.find(g => g.id === lockGameId);
+      const sideGame = games.find(g => g.id === sideGameId);
+      const lottoGame = games.find(g => g.id === lottoGameId);
+
       const lockPick = await storage.createPick(
         insertPickSchema.parse({
           weekId: activeWeek.id,
@@ -140,6 +145,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           pickType: "LOCK",
           pick: lock,
           gameId: lockGameId,
+          sportKey: lockGame?.sportKey,
           chips: 100,
         })
       );
@@ -151,6 +157,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           pickType: "SIDE",
           pick: side,
           gameId: sideGameId,
+          sportKey: sideGame?.sportKey,
           chips: 50,
         })
       );
@@ -162,6 +169,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           pickType: "LOTTO",
           pick: lotto,
           gameId: lottoGameId,
+          sportKey: lottoGame?.sportKey,
           chips: 10,
         })
       );

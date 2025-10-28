@@ -37,6 +37,7 @@ interface Pick {
   playerName: string;
   isFaded: boolean;
   fadedBy: string[];
+  sportKey?: string | null;
 }
 
 interface ChatMessageData {
@@ -337,6 +338,7 @@ export default function HomePage() {
                 status={pick.status}
                 isFaded={pick.isFaded}
                 fadedBy={pick.fadedBy}
+                sportKey={pick.sportKey || undefined}
                 canFade={pick.playerName !== currentPlayer && pick.status === "pending"}
                 isOwnPick={pick.playerName === currentPlayer}
                 onFade={() => handleFade(pick.id)}

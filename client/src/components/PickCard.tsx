@@ -1,8 +1,16 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Snowflake, CheckCircle2, XCircle, Coins } from "lucide-react";
+import { Snowflake, CheckCircle2, XCircle, Coins, Trophy, Shield, CircleDot, Activity } from "lucide-react";
 import { useState } from "react";
+
+const SPORT_CONFIG = {
+  "americanfootball_ncaaf": { label: "College Football", icon: Trophy, color: "text-neon-cyan" },
+  "americanfootball_nfl": { label: "NFL", icon: Shield, color: "text-neon-magenta" },
+  "baseball_mlb": { label: "MLB", icon: CircleDot, color: "text-neon-yellow" },
+  "basketball_ncaab": { label: "Men's College Basketball", icon: Activity, color: "text-neon-green" },
+  "basketball_nba": { label: "NBA", icon: Activity, color: "text-orange-400" },
+} as const;
 
 export type PickType = "LOCK" | "SIDE" | "LOTTO";
 export type PickStatus = "pending" | "win" | "loss";
@@ -15,6 +23,7 @@ interface PickCardProps {
   status?: PickStatus;
   isFaded?: boolean;
   fadedBy?: string[];
+  sportKey?: string;
   onFade?: () => void;
   canFade?: boolean;
   isOwnPick?: boolean;
@@ -28,11 +37,15 @@ export default function PickCard({
   status = "pending",
   isFaded = false,
   fadedBy = [],
+  sportKey,
   onFade,
   canFade = true,
   isOwnPick = false,
 }: PickCardProps) {
   const [isShaking, setIsShaking] = useState(false);
+
+  const sportConfig = sportKey ? SPORT_CONFIG[sportKey as keyof typeof SPORT_CONFIG] : null;
+  const SportIcon = sportConfig?.icon;
 
   const getBorderColor = () => {
     if (status === "win") return "border-neon-green";
@@ -105,6 +118,14 @@ export default function PickCard({
             >
               {pick}
             </p>
+            {sportConfig && SportIcon && (
+              <div className="flex items-center gap-1.5 mt-2" data-testid="sport-info">
+                <SportIcon className={`w-3.5 h-3.5 ${sportConfig.color}`} />
+                <span className={`text-xs ${sportConfig.color}`}>
+                  {sportConfig.label}
+                </span>
+              </div>
+            )}
           </div>
 
           {pickType === "LOCK" && !isOwnPick && canFade && status === "pending" && (

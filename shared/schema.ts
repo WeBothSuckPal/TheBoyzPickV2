@@ -32,6 +32,7 @@ export const picks = pgTable("picks", {
   pickType: text("pick_type").notNull(),
   pick: text("pick").notNull(),
   gameId: varchar("game_id"),
+  sportKey: text("sport_key"),
   chips: integer("chips").notNull(),
   status: text("status").notNull().default("pending"),
   createdAt: timestamp("created_at").notNull().defaultNow(),

@@ -17,15 +17,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trophy, Football, Baseball, TrendingUp } from "lucide-react";
+import { Plus, Trophy, Shield, CircleDot, Activity } from "lucide-react";
 import { format } from "date-fns";
 
 const SPORT_CONFIG = {
   "americanfootball_ncaaf": { label: "College Football", icon: Trophy, color: "text-neon-cyan" },
-  "americanfootball_nfl": { label: "NFL", icon: Football, color: "text-neon-magenta" },
-  "baseball_mlb": { label: "MLB", icon: Baseball, color: "text-neon-yellow" },
-  "basketball_ncaab": { label: "Men's College Basketball", icon: TrendingUp, color: "text-neon-green" },
-  "basketball_nba": { label: "NBA", icon: TrendingUp, color: "text-orange-400" },
+  "americanfootball_nfl": { label: "NFL", icon: Shield, color: "text-neon-magenta" },
+  "baseball_mlb": { label: "MLB", icon: CircleDot, color: "text-neon-yellow" },
+  "basketball_ncaab": { label: "Men's College Basketball", icon: Activity, color: "text-neon-green" },
+  "basketball_nba": { label: "NBA", icon: Activity, color: "text-orange-400" },
 } as const;
 
 interface Game {
