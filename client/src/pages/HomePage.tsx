@@ -318,7 +318,7 @@ export default function HomePage() {
             <h2 className="text-3xl font-display text-neon-cyan neon-glow-cyan">
               THIS WEEK'S PICKS
             </h2>
-            <PickSubmissionDialog onSubmit={handleSubmitPicks} />
+            <PickSubmissionDialog onSubmit={handleSubmitPicks} weekId={activeWeek?.id} />
           </div>
 
           {hasConsensus && <ConsensusBar />}
