@@ -285,7 +285,7 @@ export default function PickSubmissionDialog({ onSubmit, weekId, isAuthenticated
       </Tooltip>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto bg-card border-2 border-neon-cyan" data-testid="dialog-submit-picks">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-display text-neon-cyan neon-glow-cyan">
+          <DialogTitle className="text-2xl font-display text-neon-cyan">
             SUBMIT YOUR PICKS
           </DialogTitle>
           <DialogDescription>

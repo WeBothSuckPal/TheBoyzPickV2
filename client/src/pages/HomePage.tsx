@@ -7,8 +7,6 @@ import PickCard from "@/components/PickCard";
 import ConsensusBar from "@/components/ConsensusBar";
 import PickSubmissionDialog from "@/components/PickSubmissionDialog";
 import ChatBox from "@/components/ChatBox";
-import AdminPanel from "@/components/AdminPanel";
-import AdminPasswordDialog from "@/components/AdminPasswordDialog";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { connectWebSocket } from "@/lib/websocket";
@@ -62,9 +60,6 @@ interface PlayerAuthStatus {
 
 export default function HomePage() {
   const [currentPlayer, setCurrentPlayer] = useState("Carter");
-  const [showAdmin, setShowAdmin] = useState(false);
-  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
-  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -78,12 +73,6 @@ export default function HomePage() {
   const { data: authStatus } = useQuery<{ isAuthenticated: boolean }>({
     queryKey: ["/api/admin/status"],
   });
-
-  useEffect(() => {
-    if (authStatus?.isAuthenticated) {
-      setIsAdminAuthenticated(true);
-    }
-  }, [authStatus]);
 
   const { data: players = [], refetch: refetchPlayers } = useQuery<Player[]>({
     queryKey: ["/api/players"],
@@ -162,48 +151,6 @@ export default function HomePage() {
     onError: (error: any) => {
       toast({
         title: "Failed to fade",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const resolvePickMutation = useMutation({
-    mutationFn: async ({ pickId, status }: { pickId: string; status: "win" | "loss" }) => {
-      return await apiRequest("POST", `/api/picks/${pickId}/resolve`, { status });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/picks"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/players"] });
-      toast({ title: "Pick resolved!" });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Failed to resolve pick",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const fetchGamesMutation = useMutation<
-    { success: boolean; count: number; sport: string; games: any[] },
-    Error,
-    string
-  >({
-    mutationFn: async (sportKey: string) => {
-      if (!activeWeek?.id) throw new Error("No active week found");
-      return await apiRequest("POST", "/api/admin/fetch-games", { weekId: activeWeek.id, sportKey });
-    },
-    onSuccess: (data) => {
-      toast({ 
-        title: "Games fetched successfully!", 
-        description: `Loaded ${data.count} ${data.sport || ''} games from The Odds API`,
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Failed to fetch games",
         description: error.message,
         variant: "destructive",
       });
@@ -334,7 +281,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto">
           <div className="flex items-start justify-between mb-4">
             <div className="flex-1">
-              <h1 className="text-4xl md:text-6xl font-display text-center text-neon-cyan neon-glow-cyan tracking-wide">
+              <h1 className="text-4xl md:text-6xl font-display text-center text-neon-cyan tracking-wide">
                 THEBOYZPICK
               </h1>
             </div>
@@ -347,6 +294,18 @@ export default function HomePage() {
                       {playerAuthStatus.player.name}
                     </span>
                   </div>
+                  {authStatus?.isAuthenticated && (
+                    <Link href="/admin">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-destructive text-destructive hover:bg-destructive/10"
+                        data-testid="button-admin-link"
+                      >
+                        Admin
+                      </Button>
+                    </Link>
+                  )}
                   <Button
                     variant="outline"
                     size="sm"
@@ -380,7 +339,7 @@ export default function HomePage() {
 
       <main className="max-w-7xl mx-auto px-4 md:px-8 py-8 space-y-12">
         <section data-testid="section-leaderboard">
-          <h2 className="text-3xl font-display text-neon-magenta neon-glow-magenta mb-6">
+          <h2 className="text-3xl font-display text-neon-magenta mb-6">
             CHIP COUNT LEADERBOARD
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -402,7 +361,7 @@ export default function HomePage() {
 
         <section data-testid="section-picks">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-            <h2 className="text-3xl font-display text-neon-cyan neon-glow-cyan">
+            <h2 className="text-3xl font-display text-neon-cyan">
               THIS WEEK'S PICKS
             </h2>
             <PickSubmissionDialog 
@@ -443,7 +402,7 @@ export default function HomePage() {
         <Separator className="bg-border" />
 
         <section data-testid="section-chat">
-          <h2 className="text-3xl font-display text-neon-magenta neon-glow-magenta mb-6">
+          <h2 className="text-3xl font-display text-neon-magenta mb-6">
             THE LOCKER ROOM
           </h2>
           <div className="max-w-3xl">
@@ -456,53 +415,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <Separator className="bg-border" />
-
-        <section data-testid="section-admin">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-3xl font-display text-destructive">
-              ADMIN PANEL
-            </h2>
-            <button
-              onClick={() => {
-                if (isAdminAuthenticated) {
-                  setShowAdmin(!showAdmin);
-                } else {
-                  setShowPasswordDialog(true);
-                }
-              }}
-              className="text-sm text-muted-foreground hover:text-foreground font-medium"
-              data-testid="button-toggle-admin"
-            >
-              {isAdminAuthenticated && showAdmin ? "Hide" : "Show"}
-            </button>
-          </div>
-          {isAdminAuthenticated && showAdmin && (
-            <AdminPanel
-              pendingPicks={pendingPicks.map((p) => ({
-                ...p,
-                isFaded: p.isFaded || false,
-                fadedBy: p.fadedBy || [],
-              }))}
-              onResolveWin={(id) => resolvePickMutation.mutate({ pickId: id, status: "win" })}
-              onResolveLoss={(id) => resolvePickMutation.mutate({ pickId: id, status: "loss" })}
-              onFetchGames={(sportKey) => fetchGamesMutation.mutate(sportKey)}
-              isFetchingGames={fetchGamesMutation.isPending}
-              currentWeek={activeWeek}
-            />
-          )}
-        </section>
       </main>
-
-      <AdminPasswordDialog
-        open={showPasswordDialog}
-        onOpenChange={setShowPasswordDialog}
-        onSuccess={() => {
-          setIsAdminAuthenticated(true);
-          setShowAdmin(true);
-          toast({ title: "Admin access granted" });
-        }}
-      />
 
       <footer className="border-t border-border py-6 px-4 md:px-8 mt-12">
         <p className="text-center text-sm text-muted-foreground">

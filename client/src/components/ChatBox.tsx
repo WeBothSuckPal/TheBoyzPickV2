@@ -49,7 +49,7 @@ export default function ChatBox({
   return (
     <Card className="flex flex-col h-[500px] border-2 border-neon-magenta p-0 overflow-hidden" data-testid="card-chat">
       <div className="p-4 border-b border-neon-magenta bg-card/80">
-        <h3 className="text-xl font-display text-neon-magenta neon-glow-magenta">
+        <h3 className="text-xl font-display text-neon-magenta">
           THE LOCKER ROOM
         </h3>
       </div>
