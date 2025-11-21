@@ -18,25 +18,10 @@ interface AuthStatus {
 }
 
 function Router() {
-  const { data: authStatus, isLoading } = useQuery<AuthStatus>({
-    queryKey: ["/api/auth/status"],
-  });
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-lg">Loading...</div>
-      </div>
-    );
-  }
-
-  if (!authStatus?.isAuthenticated) {
-    return <LoginPage />;
-  }
-
   return (
     <Switch>
       <Route path="/" component={HomePage} />
+      <Route path="/login" component={LoginPage} />
       <Route component={NotFound} />
     </Switch>
   );

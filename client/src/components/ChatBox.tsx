@@ -16,12 +16,14 @@ interface ChatBoxProps {
   messages?: ChatMessage[];
   onSendMessage?: (message: string, user: string) => void;
   currentUser?: string;
+  disabled?: boolean;
 }
 
 export default function ChatBox({
   messages = [],
   onSendMessage,
   currentUser = "Money-Mike",
+  disabled = false,
 }: ChatBoxProps) {
   const [newMessage, setNewMessage] = useState("");
 
@@ -80,15 +82,17 @@ export default function ChatBox({
           <Input
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Talk trash..."
+            placeholder={disabled ? "Login to chat..." : "Talk trash..."}
             className="flex-1 border-neon-magenta focus:border-neon-magenta"
             data-testid="input-chat-message"
+            disabled={disabled}
           />
           <Button
             type="submit"
             size="icon"
             className="bg-neon-magenta text-background hover:bg-neon-magenta/90"
             data-testid="button-send-message"
+            disabled={disabled}
           >
             <Send className="w-4 h-4" />
           </Button>

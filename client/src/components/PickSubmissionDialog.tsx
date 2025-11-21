@@ -19,6 +19,11 @@ import {
 } from "@/components/ui/select";
 import { Plus, Trophy, Shield, CircleDot, Activity } from "lucide-react";
 import { format } from "date-fns";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const SPORT_CONFIG = {
   "americanfootball_ncaaf": { label: "College Football", icon: Trophy, color: "text-neon-cyan" },
@@ -52,9 +57,10 @@ interface PickSubmission {
 interface PickSubmissionDialogProps {
   onSubmit?: (picks: PickSubmission) => void;
   weekId?: string;
+  isAuthenticated?: boolean;
 }
 
-export default function PickSubmissionDialog({ onSubmit, weekId }: PickSubmissionDialogProps) {
+export default function PickSubmissionDialog({ onSubmit, weekId, isAuthenticated = false }: PickSubmissionDialogProps) {
   const [open, setOpen] = useState(false);
   const [sportFilter, setSportFilter] = useState<string>("all");
   const [lockGameId, setLockGameId] = useState("");
@@ -255,16 +261,28 @@ export default function PickSubmissionDialog({ onSubmit, weekId }: PickSubmissio
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button
-          size="lg"
-          className="bg-neon-cyan text-background hover:bg-neon-cyan/90 font-display text-lg"
-          data-testid="button-submit-picks"
-        >
-          <Plus className="w-5 h-5 mr-2" />
-          SUBMIT PICKS
-        </Button>
-      </DialogTrigger>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div>
+            <DialogTrigger asChild>
+              <Button
+                size="lg"
+                className="bg-neon-cyan text-background hover:bg-neon-cyan/90 font-display text-lg"
+                data-testid="button-submit-picks"
+                disabled={!isAuthenticated}
+              >
+                <Plus className="w-5 h-5 mr-2" />
+                SUBMIT PICKS
+              </Button>
+            </DialogTrigger>
+          </div>
+        </TooltipTrigger>
+        {!isAuthenticated && (
+          <TooltipContent>
+            <p>Login required to submit picks</p>
+          </TooltipContent>
+        )}
+      </Tooltip>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto bg-card border-2 border-neon-cyan" data-testid="dialog-submit-picks">
         <DialogHeader>
           <DialogTitle className="text-2xl font-display text-neon-cyan neon-glow-cyan">

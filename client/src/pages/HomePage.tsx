@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { Link } from "wouter";
 import PlayerCard from "@/components/PlayerCard";
 import PickCard from "@/components/PickCard";
 import ConsensusBar from "@/components/ConsensusBar";
@@ -9,6 +10,7 @@ import ChatBox from "@/components/ChatBox";
 import AdminPanel from "@/components/AdminPanel";
 import AdminPasswordDialog from "@/components/AdminPasswordDialog";
 import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
 import { connectWebSocket } from "@/lib/websocket";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { useToast } from "@/hooks/use-toast";
@@ -48,6 +50,16 @@ interface ChatMessageData {
   createdAt: string;
 }
 
+interface PlayerAuthStatus {
+  isAuthenticated: boolean;
+  player?: {
+    id: string;
+    name: string;
+    chips: number;
+    avatar: string;
+  };
+}
+
 export default function HomePage() {
   const [currentPlayer, setCurrentPlayer] = useState("Carter");
   const [showAdmin, setShowAdmin] = useState(false);
@@ -58,6 +70,10 @@ export default function HomePage() {
   useEffect(() => {
     connectWebSocket();
   }, []);
+
+  const { data: playerAuthStatus } = useQuery<PlayerAuthStatus>({
+    queryKey: ["/api/auth/status"],
+  });
 
   const { data: authStatus } = useQuery<{ isAuthenticated: boolean }>({
     queryKey: ["/api/admin/status"],
@@ -210,7 +226,22 @@ export default function HomePage() {
     },
   });
 
-  const currentPlayerData = players.find((p) => p.name === currentPlayer);
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("POST", "/api/auth/logout", {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/status"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/players"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/picks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/chat/messages"] });
+      toast({ title: "Logged out successfully" });
+    },
+  });
+
+  const currentPlayerData = playerAuthStatus?.isAuthenticated && playerAuthStatus.player
+    ? players.find((p) => p.id === playerAuthStatus.player!.id)
+    : players.find((p) => p.name === currentPlayer);
   const sortedPlayers = [...players].sort((a, b) => b.chips - a.chips);
 
   const lockPicks = picks.filter((p) => p.pickType === "LOCK");
@@ -224,9 +255,18 @@ export default function HomePage() {
   const hasConsensus = Object.values(pickCounts).some((players) => players.size >= 3);
 
   const handleSubmitPicks = (picksData: any) => {
+    if (!playerAuthStatus?.isAuthenticated) {
+      toast({
+        title: "Login required",
+        description: "Please login to submit picks",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!currentPlayerData) {
       toast({
-        title: "Please select a player first",
+        title: "Player not found",
         variant: "destructive",
       });
       return;
@@ -244,9 +284,18 @@ export default function HomePage() {
   };
 
   const handleFade = (pickId: string) => {
+    if (!playerAuthStatus?.isAuthenticated) {
+      toast({
+        title: "Login required",
+        description: "Please login to fade picks",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!currentPlayerData) {
       toast({
-        title: "Please select a player first",
+        title: "Player not found",
         variant: "destructive",
       });
       return;
@@ -259,6 +308,15 @@ export default function HomePage() {
   };
 
   const handleSendMessage = (message: string, _user: string) => {
+    if (!playerAuthStatus?.isAuthenticated) {
+      toast({
+        title: "Login required",
+        description: "Please login to send messages",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!currentPlayerData) return;
 
     sendMessageMutation.mutate({
@@ -280,21 +338,54 @@ export default function HomePage() {
             <p>
               Week {activeWeek?.weekNumber || "..."}
             </p>
-            <div className="flex items-center gap-2">
-              <span>Playing as:</span>
-              <select
-                value={currentPlayer}
-                onChange={(e) => setCurrentPlayer(e.target.value)}
-                className="bg-card border border-neon-cyan text-neon-cyan px-3 py-1 rounded-md font-medium"
-                data-testid="select-current-player"
-              >
-                {players.map((p) => (
-                  <option key={p.id} value={p.name}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {playerAuthStatus?.isAuthenticated && playerAuthStatus.player ? (
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <span>Playing as:</span>
+                  <span className="text-neon-cyan font-medium" data-testid="text-logged-in-player">
+                    {playerAuthStatus.player.name}
+                  </span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => logoutMutation.mutate()}
+                  disabled={logoutMutation.isPending}
+                  className="border-neon-magenta text-neon-magenta hover:bg-neon-magenta/10"
+                  data-testid="button-logout"
+                >
+                  Logout
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <span>Viewing as:</span>
+                  <select
+                    value={currentPlayer}
+                    onChange={(e) => setCurrentPlayer(e.target.value)}
+                    className="bg-card border border-neon-cyan text-neon-cyan px-3 py-1 rounded-md font-medium"
+                    data-testid="select-current-player"
+                  >
+                    {players.map((p) => (
+                      <option key={p.id} value={p.name}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <Link href="/login">
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="bg-neon-cyan text-background hover:bg-neon-cyan/90 font-medium"
+                    data-testid="button-login-link"
+                  >
+                    Login
+                  </Button>
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </header>
@@ -326,7 +417,11 @@ export default function HomePage() {
             <h2 className="text-3xl font-display text-neon-cyan neon-glow-cyan">
               THIS WEEK'S PICKS
             </h2>
-            <PickSubmissionDialog onSubmit={handleSubmitPicks} weekId={activeWeek?.id} />
+            <PickSubmissionDialog 
+              onSubmit={handleSubmitPicks} 
+              weekId={activeWeek?.id}
+              isAuthenticated={playerAuthStatus?.isAuthenticated || false}
+            />
           </div>
 
           {hasConsensus && <ConsensusBar />}
@@ -343,7 +438,7 @@ export default function HomePage() {
                 isFaded={pick.isFaded}
                 fadedBy={pick.fadedBy}
                 sportKey={pick.sportKey || undefined}
-                canFade={pick.playerName !== currentPlayer && pick.status === "pending"}
+                canFade={playerAuthStatus?.isAuthenticated && pick.playerName !== currentPlayer && pick.status === "pending"}
                 isOwnPick={pick.playerName === currentPlayer}
                 onFade={() => handleFade(pick.id)}
               />
@@ -368,6 +463,7 @@ export default function HomePage() {
               messages={chatMessages}
               onSendMessage={handleSendMessage}
               currentUser={currentPlayer}
+              disabled={!playerAuthStatus?.isAuthenticated}
             />
           </div>
         </section>

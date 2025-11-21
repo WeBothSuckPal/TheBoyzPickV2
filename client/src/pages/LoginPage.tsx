@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +19,7 @@ interface Player {
 export default function LoginPage() {
   const [selectedPlayer, setSelectedPlayer] = useState<string>("");
   const [password, setPassword] = useState("");
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
 
   const { data: players = [] } = useQuery<Player[]>({
@@ -30,10 +32,14 @@ export default function LoginPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/status"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/players"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/picks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/chat/messages"] });
       toast({
         title: "Login successful!",
         description: "Welcome to The Parlay-Vous Lounge",
       });
+      setLocation("/");
     },
     onError: (error: Error) => {
       toast({
