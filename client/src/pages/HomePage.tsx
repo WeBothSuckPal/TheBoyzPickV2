@@ -232,6 +232,7 @@ export default function HomePage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/status"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/status"] });
       queryClient.invalidateQueries({ queryKey: ["/api/players"] });
       queryClient.invalidateQueries({ queryKey: ["/api/picks"] });
       queryClient.invalidateQueries({ queryKey: ["/api/chat/messages"] });
@@ -331,34 +332,33 @@ export default function HomePage() {
     <div className="min-h-screen bg-background">
       <header className="border-b-2 border-neon-cyan py-6 px-4 md:px-8 bg-card/30">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-4xl md:text-6xl font-display text-center text-neon-cyan neon-glow-cyan mb-2 tracking-wide">
-            THEBOYZPICK
-          </h1>
-          <div className="flex flex-col md:flex-row items-center justify-center gap-4 text-center text-muted-foreground text-sm md:text-base">
-            <p>
-              Week {activeWeek?.weekNumber || "..."}
-            </p>
-            {playerAuthStatus?.isAuthenticated && playerAuthStatus.player ? (
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <span>Playing as:</span>
-                  <span className="text-neon-cyan font-medium" data-testid="text-logged-in-player">
-                    {playerAuthStatus.player.name}
-                  </span>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => logoutMutation.mutate()}
-                  disabled={logoutMutation.isPending}
-                  className="border-neon-magenta text-neon-magenta hover:bg-neon-magenta/10"
-                  data-testid="button-logout"
-                >
-                  Logout
-                </Button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-3">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex-1">
+              <h1 className="text-4xl md:text-6xl font-display text-center text-neon-cyan neon-glow-cyan tracking-wide">
+                THEBOYZPICK
+              </h1>
+            </div>
+            <div className="flex items-center gap-3">
+              {playerAuthStatus?.isAuthenticated && playerAuthStatus.player ? (
+                <>
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-muted-foreground">Playing as:</span>
+                    <span className="text-neon-cyan font-medium" data-testid="text-logged-in-player">
+                      {playerAuthStatus.player.name}
+                    </span>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => logoutMutation.mutate()}
+                    disabled={logoutMutation.isPending}
+                    className="border-neon-magenta text-neon-magenta hover:bg-neon-magenta/10"
+                    data-testid="button-logout"
+                  >
+                    Logout
+                  </Button>
+                </>
+              ) : (
                 <Link href="/login">
                   <Button
                     variant="default"
@@ -369,9 +369,12 @@ export default function HomePage() {
                     Login
                   </Button>
                 </Link>
-              </div>
-            )}
+              )}
+            </div>
           </div>
+          <p className="text-center text-muted-foreground text-sm md:text-base">
+            Week {activeWeek?.weekNumber || "..."} Slate
+          </p>
         </div>
       </header>
 

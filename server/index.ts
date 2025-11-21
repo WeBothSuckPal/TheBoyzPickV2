@@ -3,6 +3,7 @@ import session from "express-session";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { seedDatabase } from "./seed";
+import { startCronJobs } from "./cronJobs";
 
 const app = express();
 
@@ -71,6 +72,9 @@ app.use((req, res, next) => {
 (async () => {
   // Seed database with default players if needed
   await seedDatabase();
+  
+  // Start cron jobs for daily game fetches
+  startCronJobs();
   
   const server = await registerRoutes(app);
 

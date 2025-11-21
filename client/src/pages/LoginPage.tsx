@@ -32,6 +32,7 @@ export default function LoginPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/status"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/status"] });
       queryClient.invalidateQueries({ queryKey: ["/api/players"] });
       queryClient.invalidateQueries({ queryKey: ["/api/picks"] });
       queryClient.invalidateQueries({ queryKey: ["/api/chat/messages"] });

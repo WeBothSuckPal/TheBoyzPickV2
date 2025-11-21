@@ -68,6 +68,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Store player ID in session
       req.session.playerId = player.id;
       req.session.playerName = player.name;
+      
+      // Grant admin access to Carter
+      if (player.name === "Carter") {
+        req.session.isAdminAuthenticated = true;
+      }
 
       res.json({ 
         success: true,
@@ -116,6 +121,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       req.session.playerId = undefined;
       req.session.playerName = undefined;
+      req.session.isAdminAuthenticated = false;
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "Failed to logout" });
