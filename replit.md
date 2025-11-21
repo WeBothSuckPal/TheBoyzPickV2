@@ -6,12 +6,28 @@ The Parlay-Vous Lounge is a retro neon-lit digital speakeasy for tracking sports
 
 ## Recent Changes (October 2025)
 
-### Player Login System & NFL Week Tracking (Latest - Oct 28)
+### Optional Login System (Latest - Nov 21)
+- **Optional Authentication for Viewing**: Homepage accessible without login
+  - Public can view leaderboard, picks, chat history without authentication
+  - Login button in header directs to /login page
+  - After login, redirected back to homepage
+  - Header shows "Viewing as:" dropdown when not logged in, "Playing as: [Name]" when logged in
+  - Logout button appears only when authenticated
+- **Interactive Feature Gating**: All interactive features disabled when not authenticated
+  - Submit Picks button: disabled with tooltip "Login required to submit picks"
+  - Fade buttons: disabled (canFade checks authentication)
+  - Chat input/button: disabled with placeholder "Login to chat..."
+  - All handlers (submit picks, fade, send chat) show "Login required" toast if triggered without auth
+- **Query Invalidation**: Login/logout invalidates all relevant queries (auth, players, picks, chat)
+  - Ensures UI immediately reflects current authentication state
+  - No stale data after auth state changes
+- **Security**: GET /api/players filters out password fields, session-based auth with bcryptjs hashing
+
+### Player Login System & NFL Week Tracking (Oct 28)
 - **Player Authentication**: Implemented session-based login system
   - Each player has their own password (default: "password")
   - Password hashing using bcryptjs for security
   - Session-based authentication persists across page reloads
-  - Login required to access the application
   - Authentication routes: POST /api/auth/login, GET /api/auth/status, POST /api/auth/logout
 - **NFL Week Synchronization**: Weeks now sync with actual NFL schedule
   - Season starts Sept 4, 2025 (2025 NFL season kickoff)
@@ -121,9 +137,16 @@ Preferred communication style: Simple, everyday language.
 
 ### Authentication and Authorization
 
-**Current Implementation**: No authentication system implemented. The application assumes a closed group of 4 known players. Player selection is handled client-side through a dropdown/state variable.
+**Current Implementation**: Optional session-based authentication system. Public can view all content, but login required for interactive features.
 
-**Design Decision**: Intentionally simplified for small friend groups, trading security for ease of use. All players can see and interact with all data.
+**Authentication Flow**:
+- Homepage accessible without login (read-only mode)
+- Login via /login page redirects back to homepage after success
+- Session persists across page reloads using connect-pg-simple PostgreSQL session store
+- Interactive features (Submit Picks, Fade, Chat) disabled when not authenticated
+- UI-level gating with visual feedback (disabled buttons, tooltips, placeholder text)
+
+**Design Decision**: Intentionally simplified for small friend groups. Backend routes do not enforce authentication - security relies on UI-level gating. This maintains ease of use while providing optional login for tracking who submitted picks/fades/messages.
 
 ### External Dependencies
 
