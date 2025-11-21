@@ -332,7 +332,7 @@ export default function HomePage() {
       <header className="border-b-2 border-neon-cyan py-6 px-4 md:px-8 bg-card/30">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-4xl md:text-6xl font-display text-center text-neon-cyan neon-glow-cyan mb-2 tracking-wide">
-            DABOYZPICK
+            THEBOYZPICK
           </h1>
           <div className="flex flex-col md:flex-row items-center justify-center gap-4 text-center text-muted-foreground text-sm md:text-base">
             <p>
@@ -359,21 +359,6 @@ export default function HomePage() {
               </div>
             ) : (
               <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <span>Viewing as:</span>
-                  <select
-                    value={currentPlayer}
-                    onChange={(e) => setCurrentPlayer(e.target.value)}
-                    className="bg-card border border-neon-cyan text-neon-cyan px-3 py-1 rounded-md font-medium"
-                    data-testid="select-current-player"
-                  >
-                    {players.map((p) => (
-                      <option key={p.id} value={p.name}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
                 <Link href="/login">
                   <Button
                     variant="default"
@@ -518,7 +503,7 @@ export default function HomePage() {
 
       <footer className="border-t border-border py-6 px-4 md:px-8 mt-12">
         <p className="text-center text-sm text-muted-foreground">
-          DaBoyzPick • Go Buckeyes!
+          TheBoyzPick • Go Buckeyes!
         </p>
       </footer>
     </div>

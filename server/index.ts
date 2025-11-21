@@ -21,7 +21,7 @@ declare module 'http' {
 }
 
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'daboyzpick-secret-key-change-in-production',
+  secret: process.env.SESSION_SECRET || 'theboyzpick-secret-key-change-in-production',
   resave: false,
   saveUninitialized: false,
   cookie: {
