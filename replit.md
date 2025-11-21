@@ -4,9 +4,27 @@
 
 The Parlay-Vous Lounge is a retro neon-lit digital speakeasy for tracking sports picks, chips, and trash talk among friends. It's a free, fun gambling pick-tracker where 4 players compete weekly by submitting three types of picks (LOCK, SIDE, LOTTO), with real-time features like "FADE" voting and consensus tracking. The application features a 1980s arcade aesthetic with electric blue and hot pink neon glows, dark mode backgrounds, and competitive energy through player rankings and chip counts.
 
-## Recent Changes (October 2025)
+## Recent Changes (November 2025)
 
-### Optional Login System (Latest - Nov 21)
+### Auto Game Fetching & Carter Admin Access (Latest - Nov 21)
+- **Automated Daily Game Fetches**: Implemented node-cron scheduler for daily game updates
+  - Cron job runs every day at 6:00 AM EST
+  - Automatically fetches games for all 5 sports (NCAAF, NFL, MLB, NCAAMB, NBA)
+  - Server logs confirm: "Cron jobs scheduled: Daily game fetch at 6:00 AM EST"
+  - Manual "Fetch Games" button retained in admin panel as backup
+- **Carter Automatic Admin Access**: Simplified admin authentication for primary user
+  - Carter receives admin privileges automatically upon login
+  - No separate admin password required for Carter
+  - Session flag `isAdminAuthenticated` set to true when Carter logs in
+  - Admin panel immediately accessible without password dialog
+  - Other players still require admin password for admin panel access
+- **UI Improvements**: Enhanced header layout and week display
+  - Login button moved to upper right corner for better visibility
+  - Week display changed from "Week X" to "Week X Slate" format
+  - Clean header with login/logout in upper right when authenticated
+  - "Playing as: [Name]" displays when logged in
+
+### Optional Login System (Nov 21)
 - **Optional Authentication for Viewing**: Homepage accessible without login
   - Public can view leaderboard, picks, chat history without authentication
   - Login button in header directs to /login page
@@ -179,6 +197,8 @@ Preferred communication style: Simple, everyday language.
 - Zod for validation schemas
 
 **Date Handling**: date-fns for timestamp formatting
+
+**Task Scheduling**: node-cron for automated daily game fetching (runs at 6:00 AM EST)
 
 **Session Management**: connect-pg-simple for PostgreSQL session store (configured but authentication not actively used)
 
