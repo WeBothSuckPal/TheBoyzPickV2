@@ -362,30 +362,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Player not found" });
       }
 
-      // C5: Fix chip economy — faders must gain/lose chips opposite to the pick owner
+      // C5 + Feature 6: Fix chip economy and record all transactions
+      const activeWeekForTx = await storage.getActiveWeek();
+      const txWeekId = activeWeekForTx?.id;
+
       if (status === "win") {
-        // Pick owner wins their chips back plus chips from each fader
         let ownerGain = pick.chips;
         for (const fade of fades) {
           const fader = await storage.getPlayer(fade.playerId);
           if (fader) {
-            // Each fader loses pick.chips to the pick owner
             ownerGain += pick.chips;
             await storage.updatePlayerChips(fader.id, fader.chips - pick.chips);
+            await storage.createChipTransaction({
+              playerId: fader.id, amount: -pick.chips,
+              reason: `Fade lost on ${player.name}'s ${pick.pickType}: ${pick.pick}`,
+              weekId: txWeekId,
+            });
           }
         }
         await storage.updatePlayerChips(player.id, player.chips + ownerGain);
+        await storage.createChipTransaction({
+          playerId: player.id, amount: ownerGain,
+          reason: `${pick.pickType} WIN: ${pick.pick}${fades.length > 0 ? ` (+${fades.length} fade${fades.length > 1 ? 's' : ''})` : ''}`,
+          weekId: txWeekId,
+        });
       } else {
-        // Pick owner loses their chips; each fader gains pick.chips from the owner
         let ownerLoss = pick.chips;
         for (const fade of fades) {
           const fader = await storage.getPlayer(fade.playerId);
           if (fader) {
             ownerLoss += pick.chips;
             await storage.updatePlayerChips(fader.id, fader.chips + pick.chips);
+            await storage.createChipTransaction({
+              playerId: fader.id, amount: pick.chips,
+              reason: `Fade WON on ${player.name}'s ${pick.pickType}: ${pick.pick}`,
+              weekId: txWeekId,
+            });
           }
         }
         await storage.updatePlayerChips(player.id, player.chips - ownerLoss);
+        await storage.createChipTransaction({
+          playerId: player.id, amount: -ownerLoss,
+          reason: `${pick.pickType} LOSS: ${pick.pick}${fades.length > 0 ? ` (${fades.length} fade${fades.length > 1 ? 's' : ''} collected)` : ''}`,
+          weekId: txWeekId,
+        });
       }
 
       broadcast({ type: "pick_resolved", data: { pickId, status } });
@@ -598,5 +618,191 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Feature 1: Password change
+  app.post("/api/auth/change-password", async (req, res) => {
+    try {
+      if (!req.session.playerId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      const { currentPassword, newPassword } = req.body;
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ error: "Both passwords are required" });
+      }
+      if (newPassword.length < 6) {
+        return res.status(400).json({ error: "New password must be at least 6 characters" });
+      }
+      const player = await storage.getPlayer(req.session.playerId);
+      if (!player) return res.status(404).json({ error: "Player not found" });
+      const isValid = await bcrypt.compare(currentPassword, player.password);
+      if (!isValid) return res.status(401).json({ error: "Current password is incorrect" });
+      const hashed = await bcrypt.hash(newPassword, 10);
+      await storage.updatePlayerPassword(player.id, hashed);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to change password" });
+    }
+  });
+
+  // Feature 3: List all weeks for season history
+  app.get("/api/weeks", async (_req, res) => {
+    try {
+      const weeks = await storage.getWeeks();
+      res.json(weeks);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch weeks" });
+    }
+  });
+
+  // Feature 6: Chip transaction history
+  app.get("/api/players/:playerId/transactions", async (req, res) => {
+    try {
+      const { playerId } = req.params;
+      const transactions = await storage.getChipTransactions(playerId);
+      res.json(transactions);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch transactions" });
+    }
+  });
+
+  // Feature 7: Auto-resolve picks using The Odds API scores
+  app.post("/api/admin/auto-resolve", async (req, res) => {
+    try {
+      if (!req.session.isAdminAuthenticated) {
+        return res.status(401).json({ error: "Admin authentication required" });
+      }
+      const { weekId, sportKey } = req.body;
+      if (!weekId || !sportKey) {
+        return res.status(400).json({ error: "weekId and sportKey are required" });
+      }
+      const apiKey = process.env.ODDS_API_KEY;
+      if (!apiKey) return res.status(500).json({ error: "Odds API key not configured" });
+
+      const scoresRes = await fetch(
+        `https://api.the-odds-api.com/v4/sports/${sportKey}/scores/?apiKey=${apiKey}&daysFrom=3`
+      );
+      if (!scoresRes.ok) {
+        return res.status(scoresRes.status).json({ error: "Failed to fetch scores from Odds API" });
+      }
+      const scoresData: any[] = await scoresRes.json();
+      const completedGames = new Map(
+        scoresData.filter(g => g.completed && g.scores?.length >= 2).map(g => [g.id, g])
+      );
+
+      const picks = await storage.getPicks(weekId);
+      const pendingPicks = picks.filter(p => p.status === "pending" && p.gameId);
+
+      let resolved = 0;
+      let skipped = 0;
+
+      for (const pick of pendingPicks) {
+        const game = completedGames.get(pick.gameId!);
+        if (!game) { skipped++; continue; }
+
+        const homeScore = parseInt(game.scores.find((s: any) => s.name === game.home_team)?.score ?? "-1");
+        const awayScore = parseInt(game.scores.find((s: any) => s.name === game.away_team)?.score ?? "-1");
+        if (homeScore < 0 || awayScore < 0) { skipped++; continue; }
+
+        const outcome = determinePickOutcome(pick.pick, game.home_team, game.away_team, homeScore, awayScore);
+        if (!outcome) { skipped++; continue; }
+
+        const updatedPick = await storage.updatePickStatus(pick.id, outcome);
+        if (!updatedPick) continue;
+
+        const fades = await storage.getFadesForPick(pick.id);
+        const player = await storage.getPlayer(pick.playerId);
+        if (!player) continue;
+
+        if (outcome === "win") {
+          let ownerGain = pick.chips;
+          for (const fade of fades) {
+            const fader = await storage.getPlayer(fade.playerId);
+            if (fader) {
+              ownerGain += pick.chips;
+              await storage.updatePlayerChips(fader.id, fader.chips - pick.chips);
+              await storage.createChipTransaction({
+                playerId: fader.id,
+                amount: -pick.chips,
+                reason: `Fade lost on ${player.name}'s ${pick.pickType}: ${pick.pick}`,
+                weekId,
+              });
+            }
+          }
+          await storage.updatePlayerChips(player.id, player.chips + ownerGain);
+          await storage.createChipTransaction({
+            playerId: player.id,
+            amount: ownerGain,
+            reason: `${pick.pickType} WIN: ${pick.pick}${fades.length > 0 ? ` (+${fades.length} fade${fades.length > 1 ? 's' : ''})` : ''}`,
+            weekId,
+          });
+        } else {
+          let ownerLoss = pick.chips;
+          for (const fade of fades) {
+            const fader = await storage.getPlayer(fade.playerId);
+            if (fader) {
+              ownerLoss += pick.chips;
+              await storage.updatePlayerChips(fader.id, fader.chips + pick.chips);
+              await storage.createChipTransaction({
+                playerId: fader.id,
+                amount: pick.chips,
+                reason: `Fade WON on ${player.name}'s ${pick.pickType}: ${pick.pick}`,
+                weekId,
+              });
+            }
+          }
+          await storage.updatePlayerChips(player.id, player.chips - ownerLoss);
+          await storage.createChipTransaction({
+            playerId: player.id,
+            amount: -ownerLoss,
+            reason: `${pick.pickType} LOSS: ${pick.pick}${fades.length > 0 ? ` (${fades.length} fade${fades.length > 1 ? 's' : ''} collected)` : ''}`,
+            weekId,
+          });
+        }
+
+        broadcast({ type: "pick_resolved", data: { pickId: pick.id, status: outcome } });
+        resolved++;
+      }
+
+      res.json({ success: true, resolved, skipped });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to auto-resolve" });
+    }
+  });
+
   return httpServer;
+}
+
+// Feature 7: Parse pick text and determine win/loss from final scores
+function determinePickOutcome(
+  pickText: string,
+  homeTeam: string,
+  awayTeam: string,
+  homeScore: number,
+  awayScore: number
+): "win" | "loss" | null {
+  // Total pick: "Over X" or "Under X"
+  const totalMatch = pickText.match(/^(Over|Under)\s+([\d.]+)$/i);
+  if (totalMatch) {
+    const direction = totalMatch[1].toLowerCase();
+    const total = parseFloat(totalMatch[2]);
+    const actualTotal = homeScore + awayScore;
+    if (actualTotal === total) return null; // push
+    return (direction === "over" ? actualTotal > total : actualTotal < total) ? "win" : "loss";
+  }
+
+  // Spread pick: "Team Name +/-X.X"
+  const spreadMatch = pickText.match(/^(.+?)\s+([+-][\d.]+)$/);
+  if (spreadMatch) {
+    const team = spreadMatch[1].trim();
+    const spread = parseFloat(spreadMatch[2]);
+    const isHome = team === homeTeam;
+    const isAway = team === awayTeam;
+    if (!isHome && !isAway) return null;
+    const adjustedMargin = isHome
+      ? (homeScore + spread) - awayScore
+      : (awayScore + spread) - homeScore;
+    if (adjustedMargin === 0) return null; // push
+    return adjustedMargin > 0 ? "win" : "loss";
+  }
+
+  return null;
 }

@@ -295,4 +295,22 @@
   .animate-shake {
     animation: shake 0.5s ease-in-out;
   }
+
+  /* Feature 5: Mobile polish — minimum touch targets */
+  @media (max-width: 640px) {
+    button, [role="button"] {
+      min-height: 44px;
+      min-width: 44px;
+    }
+
+    /* Tighten up card padding on mobile */
+    .p-6 {
+      padding: 1rem;
+    }
+
+    /* Smaller font size for display headings on very small screens */
+    .font-display {
+      letter-spacing: 0.02em;
+    }
+  }
 }

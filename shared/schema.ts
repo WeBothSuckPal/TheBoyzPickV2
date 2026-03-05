@@ -66,6 +66,19 @@ export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({ i
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
 export type ChatMessage = typeof chatMessages.$inferSelect;
 
+export const chipTransactions = pgTable("chip_transactions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  playerId: varchar("player_id").notNull(),
+  amount: integer("amount").notNull(),
+  reason: text("reason").notNull(),
+  weekId: varchar("week_id"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertChipTransactionSchema = createInsertSchema(chipTransactions).omit({ id: true, createdAt: true });
+export type InsertChipTransaction = z.infer<typeof insertChipTransactionSchema>;
+export type ChipTransaction = typeof chipTransactions.$inferSelect;
+
 export const games = pgTable("games", {
   id: varchar("id").primaryKey(),
   weekId: varchar("week_id").notNull(),
