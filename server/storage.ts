@@ -11,17 +11,24 @@ import {
   type InsertChatMessage,
   type Game,
   type InsertGame,
+  type ChipTransaction,
+  type InsertChipTransaction,
   players as playersTable,
   weeks as weeksTable,
   picks as picksTable,
   fades as fadesTable,
   chatMessages as chatMessagesTable,
   games as gamesTable,
+  chipTransactions as chipTransactionsTable,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, inArray, desc } from "drizzle-orm";
 import { getCurrentWeek } from "./weekUtils";
+import bcrypt from "bcryptjs";
+
+// Default password hash for in-memory dev players
+const DEFAULT_PASSWORD_HASH = bcrypt.hashSync("password", 10);
 
 export interface IStorage {
   getPlayers(): Promise<Player[]>;
@@ -29,6 +36,7 @@ export interface IStorage {
   getPlayerByName(name: string): Promise<Player | undefined>;
   createPlayer(player: InsertPlayer): Promise<Player>;
   updatePlayerChips(playerId: string, chips: number): Promise<Player | undefined>;
+  updatePlayerPassword(playerId: string, hashedPassword: string): Promise<Player | undefined>;
 
   getWeeks(): Promise<Week[]>;
   getActiveWeek(): Promise<Week | undefined>;
@@ -54,6 +62,9 @@ export interface IStorage {
   createGame(game: InsertGame): Promise<Game>;
   deleteGamesByWeek(weekId: string): Promise<void>;
   deleteGamesByWeekAndSport(weekId: string, sportKey: string): Promise<void>;
+
+  getChipTransactions(playerId: string): Promise<ChipTransaction[]>;
+  createChipTransaction(tx: InsertChipTransaction): Promise<ChipTransaction>;
 }
 
 export class MemStorage implements IStorage {
@@ -63,6 +74,7 @@ export class MemStorage implements IStorage {
   private fades: Map<string, Fade>;
   private chatMessages: Map<string, ChatMessage>;
   private games: Map<string, Game>;
+  private chipTransactions: Map<string, ChipTransaction>;
 
   constructor() {
     this.players = new Map();
@@ -71,23 +83,26 @@ export class MemStorage implements IStorage {
     this.fades = new Map();
     this.chatMessages = new Map();
     this.games = new Map();
+    this.chipTransactions = new Map();
 
     this.initializeDefaultData();
   }
 
   private initializeDefaultData() {
     const defaultPlayers: InsertPlayer[] = [
-      { name: "Carter", chips: 1000, avatar: "dollar" },
-      { name: "Chub", chips: 1000, avatar: "brain" },
-      { name: "Perky", chips: 1000, avatar: "crystal" },
-      { name: "Jerry Fader", chips: 1000, avatar: "mirror" },
+      { name: "Carter", password: DEFAULT_PASSWORD_HASH, chips: 1000, avatar: "dollar" },
+      { name: "Chub", password: DEFAULT_PASSWORD_HASH, chips: 1000, avatar: "brain" },
+      { name: "Perky", password: DEFAULT_PASSWORD_HASH, chips: 1000, avatar: "crystal" },
+      { name: "Jerry Fader", password: DEFAULT_PASSWORD_HASH, chips: 1000, avatar: "mirror" },
     ];
 
     defaultPlayers.forEach((p) => {
       const id = randomUUID();
-      const player: Player = { 
+      // H4: Include password field so bcrypt.compare works in dev/MemStorage mode
+      const player: Player = {
         id,
         name: p.name,
+        password: p.password,
         avatar: p.avatar,
         chips: p.chips ?? 1000,
       };
@@ -118,9 +133,10 @@ export class MemStorage implements IStorage {
 
   async createPlayer(insertPlayer: InsertPlayer): Promise<Player> {
     const id = randomUUID();
-    const player: Player = { 
+    const player: Player = {
       id,
       name: insertPlayer.name,
+      password: insertPlayer.password,
       avatar: insertPlayer.avatar,
       chips: insertPlayer.chips ?? 1000,
     };
@@ -132,6 +148,14 @@ export class MemStorage implements IStorage {
     const player = this.players.get(playerId);
     if (!player) return undefined;
     player.chips = chips;
+    this.players.set(playerId, player);
+    return player;
+  }
+
+  async updatePlayerPassword(playerId: string, hashedPassword: string): Promise<Player | undefined> {
+    const player = this.players.get(playerId);
+    if (!player) return undefined;
+    player.password = hashedPassword;
     this.players.set(playerId, player);
     return player;
   }
@@ -293,11 +317,25 @@ export class MemStorage implements IStorage {
       .map((g) => g.id);
     gameIds.forEach((id) => this.games.delete(id));
   }
+
+  async getChipTransactions(playerId: string): Promise<ChipTransaction[]> {
+    return Array.from(this.chipTransactions.values())
+      .filter((t) => t.playerId === playerId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async createChipTransaction(tx: InsertChipTransaction): Promise<ChipTransaction> {
+    const id = randomUUID();
+    const transaction: ChipTransaction = { id, ...tx, createdAt: new Date() };
+    this.chipTransactions.set(id, transaction);
+    return transaction;
+  }
 }
 
 export class DbStorage implements IStorage {
   async getPlayers(): Promise<Player[]> {
-    return await db.select().from(playersTable).orderBy(playersTable.chips);
+    // H1: Sort descending so leaderboard shows highest chips first
+    return await db.select().from(playersTable).orderBy(desc(playersTable.chips));
   }
 
   async getPlayer(id: string): Promise<Player | undefined> {
@@ -318,6 +356,14 @@ export class DbStorage implements IStorage {
   async updatePlayerChips(playerId: string, chips: number): Promise<Player | undefined> {
     const results = await db.update(playersTable)
       .set({ chips })
+      .where(eq(playersTable.id, playerId))
+      .returning();
+    return results[0];
+  }
+
+  async updatePlayerPassword(playerId: string, hashedPassword: string): Promise<Player | undefined> {
+    const results = await db.update(playersTable)
+      .set({ password: hashedPassword })
       .where(eq(playersTable.id, playerId))
       .returning();
     return results[0];
@@ -422,6 +468,19 @@ export class DbStorage implements IStorage {
     await db.delete(gamesTable).where(
       and(eq(gamesTable.weekId, weekId), eq(gamesTable.sportKey, sportKey))
     );
+  }
+
+  async getChipTransactions(playerId: string): Promise<ChipTransaction[]> {
+    return await db.select()
+      .from(chipTransactionsTable)
+      .where(eq(chipTransactionsTable.playerId, playerId))
+      .orderBy(desc(chipTransactionsTable.createdAt))
+      .limit(50);
+  }
+
+  async createChipTransaction(tx: InsertChipTransaction): Promise<ChipTransaction> {
+    const results = await db.insert(chipTransactionsTable).values(tx).returning();
+    return results[0];
   }
 }
 

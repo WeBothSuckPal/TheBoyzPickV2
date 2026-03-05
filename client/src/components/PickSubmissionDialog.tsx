@@ -17,21 +17,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trophy, Shield, CircleDot, Activity } from "lucide-react";
+import { Plus, Trophy } from "lucide-react";
 import { format } from "date-fns";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-
-const SPORT_CONFIG = {
-  "americanfootball_ncaaf": { label: "College Football", icon: Trophy, color: "text-neon-cyan" },
-  "americanfootball_nfl": { label: "NFL", icon: Shield, color: "text-neon-magenta" },
-  "baseball_mlb": { label: "MLB", icon: CircleDot, color: "text-neon-yellow" },
-  "basketball_ncaab": { label: "Men's College Basketball", icon: Activity, color: "text-neon-green" },
-  "basketball_nba": { label: "NBA", icon: Activity, color: "text-orange-400" },
-} as const;
+import { SPORT_CONFIG } from "@/lib/sportConfig";
 
 interface Game {
   id: string;
@@ -118,7 +111,6 @@ export default function PickSubmissionDialog({ onSubmit, weekId, isAuthenticated
       sideGameId,
       lottoGameId,
     };
-    console.log("Submitted picks:", picks);
     onSubmit?.(picks);
     setOpen(false);
   };

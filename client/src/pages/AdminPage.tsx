@@ -64,7 +64,13 @@ export default function AdminPage() {
   });
 
   const { data: picks = [] } = useQuery<Pick[]>({
-    queryKey: ["/api/picks"],
+    queryKey: ["/api/picks", activeWeek?.id],
+    enabled: !!activeWeek?.id,
+    queryFn: async () => {
+      const res = await fetch(`/api/picks?weekId=${activeWeek!.id}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch picks");
+      return res.json();
+    },
   });
 
   const pendingPicks = picks.filter((pick) => pick.status === "pending");
@@ -95,9 +101,9 @@ export default function AdminPage() {
   const fetchGamesMutation = useMutation({
     mutationFn: async (sportKey: string) => {
       if (!activeWeek?.id) throw new Error("No active week found");
-      return await apiRequest("POST", "/api/admin/fetch-games", { 
-        weekId: activeWeek.id, 
-        sportKey 
+      return await apiRequest("POST", "/api/admin/fetch-games", {
+        weekId: activeWeek.id,
+        sportKey
       });
     },
     onSuccess: (data: any) => {
@@ -109,6 +115,31 @@ export default function AdminPage() {
     onError: (error: any) => {
       toast({
         title: "Failed to fetch games",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const autoResolveMutation = useMutation({
+    mutationFn: async (sportKey: string) => {
+      if (!activeWeek?.id) throw new Error("No active week found");
+      return await apiRequest("POST", "/api/admin/auto-resolve", {
+        weekId: activeWeek.id,
+        sportKey,
+      });
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/picks"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/players"] });
+      toast({
+        title: "Auto-resolve complete",
+        description: `Resolved ${data.resolved} pick${data.resolved !== 1 ? "s" : ""}. ${data.skipped} skipped (no score yet).`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Auto-resolve failed",
         description: error.message,
         variant: "destructive",
       });
@@ -184,7 +215,9 @@ export default function AdminPage() {
           onResolveWin={(id) => resolvePickMutation.mutate({ pickId: id, status: "win" })}
           onResolveLoss={(id) => resolvePickMutation.mutate({ pickId: id, status: "loss" })}
           onFetchGames={(sportKey) => fetchGamesMutation.mutate(sportKey)}
+          onAutoResolve={(sportKey) => autoResolveMutation.mutate(sportKey)}
           isFetchingGames={fetchGamesMutation.isPending}
+          isAutoResolving={autoResolveMutation.isPending}
           currentWeek={activeWeek}
         />
       </div>

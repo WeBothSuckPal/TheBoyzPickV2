@@ -16,16 +16,15 @@ const SEASON_START = process.env.SEASON_START_DATE
  */
 export function getCurrentWeekNumber(): number {
   const now = new Date();
-  
-  // Calculate days since season start
-  const diffTime = Math.abs(now.getTime() - SEASON_START.getTime());
+
+  // M2: Use signed difference so pre-season dates don't produce wrong week numbers
+  const diffTime = now.getTime() - SEASON_START.getTime();
+
+  // Before the season starts, clamp to week 1
+  if (diffTime < 0) return 1;
+
   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-  
-  // Calculate week number (starting from week 1)
-  // Each week starts on Sunday
-  const weekNumber = Math.floor(diffDays / 7) + 1;
-  
-  return weekNumber;
+  return Math.floor(diffDays / 7) + 1;
 }
 
 /**
@@ -63,14 +62,8 @@ export async function getCurrentWeek(): Promise<Week> {
   // Create the week if it doesn't exist
   log(`Auto-creating Week ${currentWeekNumber}...`);
   
-  // First, set all existing weeks to inactive
-  const allWeeks = await db.select().from(weeks);
-  for (const week of allWeeks) {
-    await db
-      .update(weeks)
-      .set({ isActive: false })
-      .where(eq(weeks.id, week.id));
-  }
+  // M3: Single UPDATE instead of N+1 per-row updates
+  await db.update(weeks).set({ isActive: false });
   
   // Create the new week as active
   const [newWeek] = await db

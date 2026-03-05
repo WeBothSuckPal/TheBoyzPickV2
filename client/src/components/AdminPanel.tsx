@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CheckCircle2, XCircle, Snowflake, Coins, Download } from "lucide-react";
+import { CheckCircle2, XCircle, Snowflake, Coins, Download, Zap } from "lucide-react";
 
 interface PendingPick {
   id: string;
@@ -27,7 +27,9 @@ interface AdminPanelProps {
   onResolveWin?: (pickId: string) => void;
   onResolveLoss?: (pickId: string) => void;
   onFetchGames?: (sportKey: string) => void;
+  onAutoResolve?: (sportKey: string) => void;
   isFetchingGames?: boolean;
+  isAutoResolving?: boolean;
   currentWeek?: { weekNumber: number; };
 }
 
@@ -44,23 +46,27 @@ export default function AdminPanel({
   onResolveWin,
   onResolveLoss,
   onFetchGames,
+  onAutoResolve,
   isFetchingGames = false,
+  isAutoResolving = false,
   currentWeek,
 }: AdminPanelProps) {
   const [selectedSport, setSelectedSport] = useState("americanfootball_ncaaf");
 
   const handleWin = (pickId: string) => {
-    console.log(`Resolved pick ${pickId} as WIN`);
     onResolveWin?.(pickId);
   };
 
   const handleLoss = (pickId: string) => {
-    console.log(`Resolved pick ${pickId} as LOSS`);
     onResolveLoss?.(pickId);
   };
 
   const handleFetchGames = () => {
     onFetchGames?.(selectedSport);
+  };
+
+  const handleAutoResolve = () => {
+    onAutoResolve?.(selectedSport);
   };
 
   return (
@@ -97,15 +103,25 @@ export default function AdminPanel({
             </Select>
           </div>
           
-          <div className="flex items-end">
+          <div className="flex items-end gap-2 flex-wrap">
             <Button
               onClick={handleFetchGames}
               disabled={isFetchingGames}
-              className="bg-primary text-primary-foreground font-display w-full md:w-auto"
+              className="bg-primary text-primary-foreground font-display"
               data-testid="button-fetch-games"
             >
               <Download className="w-4 h-4 mr-2" />
               {isFetchingGames ? "Fetching..." : "Fetch Games"}
+            </Button>
+            <Button
+              onClick={handleAutoResolve}
+              disabled={isAutoResolving}
+              variant="outline"
+              className="border-neon-green text-neon-green hover:bg-neon-green/10 font-display"
+              data-testid="button-auto-resolve"
+            >
+              <Zap className="w-4 h-4 mr-2" />
+              {isAutoResolving ? "Resolving..." : "Auto-Resolve"}
             </Button>
           </div>
         </div>

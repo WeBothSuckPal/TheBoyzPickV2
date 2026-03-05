@@ -1,9 +1,12 @@
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Crown, Frown, Coins } from "lucide-react";
+import ChipHistoryDialog from "@/components/ChipHistoryDialog";
 
 export type PlayerAvatar = "brain" | "crystal" | "dollar" | "mirror";
 
 interface PlayerCardProps {
+  id: string;
   name: string;
   chips: number;
   avatar: PlayerAvatar;
@@ -13,12 +16,15 @@ interface PlayerCardProps {
 }
 
 export default function PlayerCard({
+  id,
   name,
   chips,
   avatar,
   isFirst,
   isLast,
 }: PlayerCardProps) {
+  const [historyOpen, setHistoryOpen] = useState(false);
+
   const getAvatarComponent = () => {
     const iconClass = "w-16 h-16 text-primary";
     switch (avatar) {
@@ -63,43 +69,56 @@ export default function PlayerCard({
   };
 
   return (
-    <Card
-      className="relative p-6 border-2 border-primary hover-elevate"
-      data-testid={`card-player-${name.toLowerCase().replace(/\s+/g, '-')}`}
-    >
-      {isFirst && (
-        <div className="absolute -top-3 -right-3" data-testid="icon-rank-first">
-          <Crown className="w-10 h-10 text-neon-yellow fill-neon-yellow" />
-        </div>
-      )}
-      {isLast && (
-        <div className="absolute -top-3 -right-3" data-testid="icon-rank-last">
-          <Frown className="w-10 h-10 text-destructive" />
-        </div>
-      )}
+    <>
+      {/* Feature 6: Click chip count to open history */}
+      <Card
+        className="relative p-6 border-2 border-primary hover-elevate cursor-pointer"
+        onClick={() => setHistoryOpen(true)}
+        title="Click to view chip history"
+        data-testid={`card-player-${name.toLowerCase().replace(/\s+/g, '-')}`}
+      >
+        {isFirst && (
+          <div className="absolute -top-3 -right-3" data-testid="icon-rank-first">
+            <Crown className="w-10 h-10 text-neon-yellow fill-neon-yellow" />
+          </div>
+        )}
+        {isLast && (
+          <div className="absolute -top-3 -right-3" data-testid="icon-rank-last">
+            <Frown className="w-10 h-10 text-destructive" />
+          </div>
+        )}
 
-      <div className="flex flex-col items-center gap-4">
-        <div data-testid={`icon-avatar-${avatar}`}>
-          {getAvatarComponent()}
-        </div>
+        <div className="flex flex-col items-center gap-4">
+          <div data-testid={`icon-avatar-${avatar}`}>
+            {getAvatarComponent()}
+          </div>
 
-        <h3
-          className="text-2xl font-display text-foreground text-center"
-          data-testid={`text-player-name-${name.toLowerCase().replace(/\s+/g, '-')}`}
-        >
-          {name}
-        </h3>
-
-        <div className="flex items-center gap-3">
-          <Coins className="w-8 h-8 text-primary" data-testid="icon-chip" />
-          <span
-            className="text-3xl font-bold text-foreground"
-            data-testid={`text-chips-${name.toLowerCase().replace(/\s+/g, '-')}`}
+          <h3
+            className="text-2xl font-display text-foreground text-center"
+            data-testid={`text-player-name-${name.toLowerCase().replace(/\s+/g, '-')}`}
           >
-            {chips.toLocaleString()}
-          </span>
+            {name}
+          </h3>
+
+          <div className="flex items-center gap-3">
+            <Coins className="w-8 h-8 text-primary" data-testid="icon-chip" />
+            <span
+              className="text-3xl font-bold text-foreground"
+              data-testid={`text-chips-${name.toLowerCase().replace(/\s+/g, '-')}`}
+            >
+              {chips.toLocaleString()}
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground -mt-2">tap for history</p>
         </div>
-      </div>
-    </Card>
+      </Card>
+
+      <ChipHistoryDialog
+        playerId={id}
+        playerName={name}
+        open={historyOpen}
+        onOpenChange={setHistoryOpen}
+      />
+    </>
   );
 }
