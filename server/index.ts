@@ -15,12 +15,6 @@ declare module 'express-session' {
   }
 }
 
-declare module 'http' {
-  interface IncomingMessage {
-    rawBody: unknown
-  }
-}
-
 app.use(session({
   secret: process.env.SESSION_SECRET || 'theboyzpick-secret-key-change-in-production',
   resave: false,
@@ -32,11 +26,7 @@ app.use(session({
   }
 }));
 
-app.use(express.json({
-  verify: (req, _res, buf) => {
-    req.rawBody = buf;
-  }
-}));
+app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 app.use((req, res, next) => {
@@ -78,12 +68,11 @@ app.use((req, res, next) => {
   
   const server = await registerRoutes(app);
 
+  // H3: Do not throw after sending the response — it causes double-response crashes
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
-
     res.status(status).json({ message });
-    throw err;
   });
 
   // importantly only setup vite in development and after

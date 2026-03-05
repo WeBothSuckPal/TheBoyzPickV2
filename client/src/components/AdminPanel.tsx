@@ -50,12 +50,10 @@ export default function AdminPanel({
   const [selectedSport, setSelectedSport] = useState("americanfootball_ncaaf");
 
   const handleWin = (pickId: string) => {
-    console.log(`Resolved pick ${pickId} as WIN`);
     onResolveWin?.(pickId);
   };
 
   const handleLoss = (pickId: string) => {
-    console.log(`Resolved pick ${pickId} as LOSS`);
     onResolveLoss?.(pickId);
   };
 

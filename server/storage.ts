@@ -20,8 +20,12 @@ import {
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, inArray, desc } from "drizzle-orm";
 import { getCurrentWeek } from "./weekUtils";
+import bcrypt from "bcryptjs";
+
+// Default password hash for in-memory dev players
+const DEFAULT_PASSWORD_HASH = bcrypt.hashSync("password", 10);
 
 export interface IStorage {
   getPlayers(): Promise<Player[]>;
@@ -77,17 +81,19 @@ export class MemStorage implements IStorage {
 
   private initializeDefaultData() {
     const defaultPlayers: InsertPlayer[] = [
-      { name: "Carter", chips: 1000, avatar: "dollar" },
-      { name: "Chub", chips: 1000, avatar: "brain" },
-      { name: "Perky", chips: 1000, avatar: "crystal" },
-      { name: "Jerry Fader", chips: 1000, avatar: "mirror" },
+      { name: "Carter", password: DEFAULT_PASSWORD_HASH, chips: 1000, avatar: "dollar" },
+      { name: "Chub", password: DEFAULT_PASSWORD_HASH, chips: 1000, avatar: "brain" },
+      { name: "Perky", password: DEFAULT_PASSWORD_HASH, chips: 1000, avatar: "crystal" },
+      { name: "Jerry Fader", password: DEFAULT_PASSWORD_HASH, chips: 1000, avatar: "mirror" },
     ];
 
     defaultPlayers.forEach((p) => {
       const id = randomUUID();
-      const player: Player = { 
+      // H4: Include password field so bcrypt.compare works in dev/MemStorage mode
+      const player: Player = {
         id,
         name: p.name,
+        password: p.password,
         avatar: p.avatar,
         chips: p.chips ?? 1000,
       };
@@ -118,9 +124,10 @@ export class MemStorage implements IStorage {
 
   async createPlayer(insertPlayer: InsertPlayer): Promise<Player> {
     const id = randomUUID();
-    const player: Player = { 
+    const player: Player = {
       id,
       name: insertPlayer.name,
+      password: insertPlayer.password,
       avatar: insertPlayer.avatar,
       chips: insertPlayer.chips ?? 1000,
     };
@@ -297,7 +304,8 @@ export class MemStorage implements IStorage {
 
 export class DbStorage implements IStorage {
   async getPlayers(): Promise<Player[]> {
-    return await db.select().from(playersTable).orderBy(playersTable.chips);
+    // H1: Sort descending so leaderboard shows highest chips first
+    return await db.select().from(playersTable).orderBy(desc(playersTable.chips));
   }
 
   async getPlayer(id: string): Promise<Player | undefined> {

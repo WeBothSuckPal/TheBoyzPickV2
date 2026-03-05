@@ -1,16 +1,9 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Snowflake, CheckCircle2, XCircle, Coins, Trophy, Shield, CircleDot, Activity } from "lucide-react";
+import { Snowflake, CheckCircle2, XCircle, Coins } from "lucide-react";
 import { useState } from "react";
-
-const SPORT_CONFIG = {
-  "americanfootball_ncaaf": { label: "College Football", icon: Trophy, color: "text-neon-cyan" },
-  "americanfootball_nfl": { label: "NFL", icon: Shield, color: "text-neon-magenta" },
-  "baseball_mlb": { label: "MLB", icon: CircleDot, color: "text-neon-yellow" },
-  "basketball_ncaab": { label: "Men's College Basketball", icon: Activity, color: "text-neon-green" },
-  "basketball_nba": { label: "NBA", icon: Activity, color: "text-orange-400" },
-} as const;
+import { SPORT_CONFIG } from "@/lib/sportConfig";
 
 export type PickType = "LOCK" | "SIDE" | "LOTTO";
 export type PickStatus = "pending" | "win" | "loss";
@@ -75,7 +68,6 @@ export default function PickCard({
     setIsShaking(true);
     setTimeout(() => setIsShaking(false), 500);
     onFade?.();
-    console.log(`Faded ${playerName}'s ${pickType}: ${pick}`);
   };
 
   return (

@@ -117,15 +117,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/auth/logout", async (req, res) => {
-    try {
-      req.session.playerId = undefined;
-      req.session.playerName = undefined;
-      req.session.isAdminAuthenticated = false;
+  app.post("/api/auth/logout", (req, res) => {
+    // M1: Properly destroy the session rather than just clearing fields
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({ error: "Failed to logout" });
+      }
+      res.clearCookie("connect.sid");
       res.json({ success: true });
-    } catch (error) {
-      res.status(500).json({ error: "Failed to logout" });
-    }
+    });
   });
 
   app.get("/api/weeks/active", async (_req, res) => {
@@ -179,6 +179,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/picks", async (req, res) => {
     try {
+      // C2: Verify the requester is authenticated and submitting as themselves
+      if (!req.session.playerId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
       const activeWeek = await storage.getActiveWeek();
       if (!activeWeek) {
         return res.status(400).json({ error: "No active week" });
@@ -188,6 +193,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (!playerId || !lock || !side || !lotto) {
         return res.status(400).json({ error: "All picks are required" });
+      }
+
+      if (req.session.playerId !== playerId) {
+        return res.status(403).json({ error: "Cannot submit picks for another player" });
       }
 
       // Require all gameIds to prevent deadline bypass
@@ -273,6 +282,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/fades", async (req, res) => {
     try {
+      // C3: Verify the requester is authenticated and fading as themselves
+      if (!req.session.playerId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
       const activeWeek = await storage.getActiveWeek();
       if (!activeWeek) {
         return res.status(400).json({ error: "No active week" });
@@ -282,6 +296,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...req.body,
         weekId: activeWeek.id,
       });
+
+      if (req.session.playerId !== fadeData.playerId) {
+        return res.status(403).json({ error: "Cannot fade as another player" });
+      }
 
       const existingFades = await storage.getFadesByPlayer(
         activeWeek.id,
@@ -321,6 +339,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/picks/:pickId/resolve", async (req, res) => {
     try {
+      // C1: Require admin authentication
+      if (!req.session.isAdminAuthenticated) {
+        return res.status(401).json({ error: "Admin authentication required" });
+      }
+
       const { pickId } = req.params;
       const { status } = req.body;
 
@@ -339,25 +362,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Player not found" });
       }
 
-      let chipDelta = 0;
+      // C5: Fix chip economy — faders must gain/lose chips opposite to the pick owner
       if (status === "win") {
-        chipDelta = pick.chips;
-        if (fades.length > 0) {
-          chipDelta += fades.length * pick.chips;
-        }
-      } else {
-        chipDelta = -pick.chips;
-        if (fades.length > 0) {
-          for (const fade of fades) {
-            const fader = await storage.getPlayer(fade.playerId);
-            if (fader) {
-              await storage.updatePlayerChips(fader.id, fader.chips + pick.chips);
-            }
+        // Pick owner wins their chips back plus chips from each fader
+        let ownerGain = pick.chips;
+        for (const fade of fades) {
+          const fader = await storage.getPlayer(fade.playerId);
+          if (fader) {
+            // Each fader loses pick.chips to the pick owner
+            ownerGain += pick.chips;
+            await storage.updatePlayerChips(fader.id, fader.chips - pick.chips);
           }
         }
+        await storage.updatePlayerChips(player.id, player.chips + ownerGain);
+      } else {
+        // Pick owner loses their chips; each fader gains pick.chips from the owner
+        let ownerLoss = pick.chips;
+        for (const fade of fades) {
+          const fader = await storage.getPlayer(fade.playerId);
+          if (fader) {
+            ownerLoss += pick.chips;
+            await storage.updatePlayerChips(fader.id, fader.chips + pick.chips);
+          }
+        }
+        await storage.updatePlayerChips(player.id, player.chips - ownerLoss);
       }
-
-      await storage.updatePlayerChips(player.id, player.chips + chipDelta);
 
       broadcast({ type: "pick_resolved", data: { pickId, status } });
 
@@ -388,7 +417,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/chat/messages", async (req, res) => {
     try {
+      // C4: Verify the requester is authenticated and posting as themselves
+      if (!req.session.playerId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
       const messageData = insertChatMessageSchema.parse(req.body);
+
+      if (req.session.playerId !== messageData.playerId) {
+        return res.status(403).json({ error: "Cannot post as another player" });
+      }
+
+      // M4: Enforce message length limit
+      if (messageData.message.length > 500) {
+        return res.status(400).json({ error: "Message must be 500 characters or fewer" });
+      }
+
       const message = await storage.createChatMessage(messageData);
 
       const player = await storage.getPlayer(message.playerId);

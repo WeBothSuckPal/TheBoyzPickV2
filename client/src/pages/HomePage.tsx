@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useEffect, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Link } from "wouter";
@@ -59,7 +59,6 @@ interface PlayerAuthStatus {
 }
 
 export default function HomePage() {
-  const [currentPlayer, setCurrentPlayer] = useState("Carter");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -187,9 +186,11 @@ export default function HomePage() {
     },
   });
 
+  // H2: Use the authenticated player name from session, not a stale local state
+  const currentPlayerName = playerAuthStatus?.player?.name ?? "";
   const currentPlayerData = playerAuthStatus?.isAuthenticated && playerAuthStatus.player
     ? players.find((p) => p.id === playerAuthStatus.player!.id)
-    : players.find((p) => p.name === currentPlayer);
+    : undefined;
   const sortedPlayers = [...players].sort((a, b) => b.chips - a.chips);
 
   const lockPicks = picks.filter((p) => p.pickType === "LOCK");
@@ -385,8 +386,8 @@ export default function HomePage() {
                 isFaded={pick.isFaded}
                 fadedBy={pick.fadedBy}
                 sportKey={pick.sportKey || undefined}
-                canFade={playerAuthStatus?.isAuthenticated && pick.playerName !== currentPlayer && pick.status === "pending"}
-                isOwnPick={pick.playerName === currentPlayer}
+                canFade={playerAuthStatus?.isAuthenticated && pick.playerName !== currentPlayerName && pick.status === "pending"}
+                isOwnPick={pick.playerName === currentPlayerName}
                 onFade={() => handleFade(pick.id)}
               />
             ))}
@@ -409,7 +410,7 @@ export default function HomePage() {
             <ChatBox
               messages={chatMessages}
               onSendMessage={handleSendMessage}
-              currentUser={currentPlayer}
+              currentUser={currentPlayerName}
               disabled={!playerAuthStatus?.isAuthenticated}
             />
           </div>
