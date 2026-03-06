@@ -1,6 +1,4 @@
 import type { Express } from "express";
-import { createServer, type Server } from "http";
-import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import {
   insertPickSchema,
@@ -8,29 +6,12 @@ import {
   insertChatMessageSchema,
 } from "@shared/schema";
 import bcrypt from "bcryptjs";
+import { fetchGamesForAllSports } from "./cronJobs";
 
-export async function registerRoutes(app: Express): Promise<Server> {
-  const httpServer = createServer(app);
-  const wss = new WebSocketServer({ server: httpServer, path: "/ws" });
-
-  const clients = new Set<WebSocket>();
-
-  wss.on("connection", (ws) => {
-    clients.add(ws);
-
-    ws.on("close", () => {
-      clients.delete(ws);
-    });
-  });
-
-  function broadcast(message: any) {
-    const data = JSON.stringify(message);
-    clients.forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(data);
-      }
-    });
-  }
+export async function registerRoutes(
+  app: Express,
+  broadcast: (message: any) => void = () => {}
+): Promise<void> {
 
   app.get("/api/players", async (_req, res) => {
     try {
@@ -768,7 +749,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  return httpServer;
+  // Vercel Cron endpoint — triggers daily game fetch
+  app.post("/api/cron/fetch-games", async (req, res) => {
+    const cronSecret = process.env.CRON_SECRET;
+    if (cronSecret) {
+      const authHeader = req.headers["authorization"];
+      if (authHeader !== `Bearer ${cronSecret}`) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+    }
+    try {
+      await fetchGamesForAllSports();
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to fetch games" });
+    }
+  });
 }
 
 // Feature 7: Parse pick text and determine win/loss from final scores

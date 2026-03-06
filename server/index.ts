@@ -1,5 +1,9 @@
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
+import connectPgSimple from "connect-pg-simple";
+import { createServer } from "http";
+import { WebSocketServer, WebSocket } from "ws";
+import { Pool } from "@neondatabase/serverless";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { seedDatabase } from "./seed";
@@ -15,7 +19,15 @@ declare module 'express-session' {
   }
 }
 
+const PgSession = connectPgSimple(session);
+const sessionPool = new Pool({ connectionString: process.env.DATABASE_URL });
+
 app.use(session({
+  store: new PgSession({
+    pool: sessionPool as any,
+    tableName: "session",
+    createTableIfMissing: true,
+  }),
   secret: process.env.SESSION_SECRET || 'theboyzpick-secret-key-change-in-production',
   resave: false,
   saveUninitialized: false,
@@ -62,37 +74,52 @@ app.use((req, res, next) => {
 (async () => {
   // Seed database with default players if needed
   await seedDatabase();
-  
-  // Start cron jobs for daily game fetches
-  startCronJobs();
-  
-  const server = await registerRoutes(app);
 
-  // H3: Do not throw after sending the response — it causes double-response crashes
+  // Start cron jobs only in development (Vercel uses its own cron via /api/cron/fetch-games)
+  if (process.env.NODE_ENV !== 'production') {
+    startCronJobs();
+  }
+
+  const httpServer = createServer(app);
+
+  // WebSocket server for real-time updates
+  const wss = new WebSocketServer({ server: httpServer, path: "/ws" });
+  const clients = new Set<WebSocket>();
+
+  wss.on("connection", (ws) => {
+    clients.add(ws);
+    ws.on("close", () => {
+      clients.delete(ws);
+    });
+  });
+
+  function broadcast(message: any) {
+    const data = JSON.stringify(message);
+    clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(data);
+      }
+    });
+  }
+
+  await registerRoutes(app, broadcast);
+
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
     res.status(status).json({ message });
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
   if (app.get("env") === "development") {
-    await setupVite(app, server);
+    await setupVite(app, httpServer);
   } else {
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || '5000', 10);
-  server.listen({
+  httpServer.listen({
     port,
     host: "0.0.0.0",
-    reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
   });
