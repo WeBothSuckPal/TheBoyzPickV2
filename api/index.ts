@@ -45,13 +45,7 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-  const status = err.status || err.statusCode || 500;
-  const message = err.message || "Internal Server Error";
-  res.status(status).json({ message });
-});
-
-// Lazy initialization — routes are registered on first request
+// Lazy initialization — routes + error handler are registered on first request
 let initPromise: Promise<void> | null = null;
 
 function initialize(): Promise<void> {
@@ -60,6 +54,12 @@ function initialize(): Promise<void> {
       await seedDatabase();
       // No broadcast/WebSocket on Vercel — clients use polling
       await registerRoutes(app);
+      // Error handler must come AFTER routes in Express
+      app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+        const status = err.status || err.statusCode || 500;
+        const message = err.message || "Internal Server Error";
+        res.status(status).json({ message });
+      });
     })();
   }
   return initPromise;
