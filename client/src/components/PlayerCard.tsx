@@ -20,13 +20,14 @@ export default function PlayerCard({
   name,
   chips,
   avatar,
+  rank,
   isFirst,
   isLast,
 }: PlayerCardProps) {
   const [historyOpen, setHistoryOpen] = useState(false);
 
   const getAvatarComponent = () => {
-    const iconClass = "w-16 h-16 text-primary";
+    const iconClass = `w-16 h-16 ${isFirst ? "text-neon-yellow" : "text-primary"}`;
     switch (avatar) {
       case "brain":
         return (
@@ -70,16 +71,29 @@ export default function PlayerCard({
 
   return (
     <>
-      {/* Feature 6: Click chip count to open history */}
       <Card
-        className="relative p-6 border-2 border-primary hover-elevate cursor-pointer"
+        className={`relative p-6 border-2 hover-elevate cursor-pointer overflow-hidden ${
+          isFirst
+            ? "border-neon-yellow neon-glow-yellow animate-neon-pulse"
+            : "border-primary"
+        }`}
         onClick={() => setHistoryOpen(true)}
         title="Click to view chip history"
         data-testid={`card-player-${name.toLowerCase().replace(/\s+/g, '-')}`}
       >
+        {/* Rank watermark in background */}
+        {rank && (
+          <span className="absolute bottom-2 right-3 text-7xl font-display font-bold opacity-[0.06] select-none leading-none pointer-events-none">
+            {rank}
+          </span>
+        )}
+
         {isFirst && (
           <div className="absolute -top-3 -right-3" data-testid="icon-rank-first">
-            <Crown className="w-10 h-10 text-neon-yellow fill-neon-yellow" />
+            <Crown
+              className="w-10 h-10 text-neon-yellow fill-neon-yellow"
+              style={{ filter: "drop-shadow(0 0 8px hsl(var(--neon-yellow) / 0.8))" }}
+            />
           </div>
         )}
         {isLast && (
@@ -89,19 +103,30 @@ export default function PlayerCard({
         )}
 
         <div className="flex flex-col items-center gap-4">
+          {isFirst && (
+            <span className="text-xs font-display tracking-widest text-neon-yellow border border-neon-yellow/40 bg-neon-yellow/10 rounded px-2 py-0.5">
+              #1 CHAMPION
+            </span>
+          )}
+
           <div data-testid={`icon-avatar-${avatar}`}>
             {getAvatarComponent()}
           </div>
 
           <h3
-            className="text-2xl font-display text-foreground text-center"
+            className={`text-2xl font-display text-center ${
+              isFirst ? "text-neon-yellow neon-glow-yellow" : "text-foreground"
+            }`}
             data-testid={`text-player-name-${name.toLowerCase().replace(/\s+/g, '-')}`}
           >
             {name}
           </h3>
 
           <div className="flex items-center gap-3">
-            <Coins className="w-8 h-8 text-primary" data-testid="icon-chip" />
+            <Coins
+              className={`w-8 h-8 ${isFirst ? "text-neon-yellow" : "text-primary"}`}
+              data-testid="icon-chip"
+            />
             <span
               className="text-3xl font-bold text-foreground"
               data-testid={`text-chips-${name.toLowerCase().replace(/\s+/g, '-')}`}

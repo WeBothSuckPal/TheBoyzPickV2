@@ -6,6 +6,7 @@ import PlayerCard from "@/components/PlayerCard";
 import PickCard from "@/components/PickCard";
 import ConsensusBar from "@/components/ConsensusBar";
 import PickSubmissionDialog from "@/components/PickSubmissionDialog";
+import SportsTicker from "@/components/SportsTicker";
 import ChatBox from "@/components/ChatBox";
 import CountdownTimer from "@/components/CountdownTimer";
 import ChangePasswordDialog from "@/components/ChangePasswordDialog";
@@ -315,7 +316,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background sports-bg">
       {/* Feature 5: Mobile-optimised header — stacks on small screens */}
       <header className="border-b-2 border-neon-cyan py-4 px-4 md:px-8 bg-card/30 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto">
@@ -363,6 +364,8 @@ export default function HomePage() {
           </p>
         </div>
       </header>
+
+      <SportsTicker weekNumber={activeWeek?.weekNumber} />
 
       <main className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-8 space-y-10 md:space-y-12">
         <section data-testid="section-leaderboard">
