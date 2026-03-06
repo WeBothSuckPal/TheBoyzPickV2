@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -7,24 +7,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-interface Player {
-  id: string;
-  name: string;
-  chips: number;
-  avatar: string;
-}
 
 export default function LoginPage() {
-  const [selectedPlayer, setSelectedPlayer] = useState<string>("");
+  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-
-  const { data: players = [] } = useQuery<Player[]>({
-    queryKey: ["/api/players"],
-  });
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: { name: string; password: string }) => {
@@ -36,10 +26,7 @@ export default function LoginPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/players"] });
       queryClient.invalidateQueries({ queryKey: ["/api/picks"] });
       queryClient.invalidateQueries({ queryKey: ["/api/chat/messages"] });
-      toast({
-        title: "Login successful!",
-        description: "Welcome to The Parlay-Vous Lounge",
-      });
+      toast({ title: "Welcome back!", description: "You're in. Let's get it." });
       setLocation("/");
     },
     onError: (error: Error) => {
@@ -51,21 +38,67 @@ export default function LoginPage() {
     },
   });
 
-  const handleLogin = (e: React.FormEvent) => {
+  const registerMutation = useMutation({
+    mutationFn: async (data: { name: string; password: string }) => {
+      return await apiRequest("POST", "/api/auth/register", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/status"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/players"] });
+      toast({ title: "Account created!", description: "Welcome to The Parlay-Vous Lounge." });
+      setLocation("/");
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Sign up failed",
+        description: error.message || "Could not create account",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedPlayer || !password) {
+
+    if (!username.trim() || !password) {
       toast({
         title: "Missing information",
-        description: "Please select a player and enter your password",
+        description: "Please fill in all fields",
         variant: "destructive",
       });
       return;
     }
 
-    const player = players.find(p => p.id === selectedPlayer);
-    if (player) {
-      loginMutation.mutate({ name: player.name, password });
+    if (mode === "signup") {
+      if (password !== confirmPassword) {
+        toast({
+          title: "Passwords don't match",
+          description: "Please make sure both passwords are the same",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (password.length < 6) {
+        toast({
+          title: "Password too short",
+          description: "Password must be at least 6 characters",
+          variant: "destructive",
+        });
+        return;
+      }
+      registerMutation.mutate({ name: username.trim(), password });
+    } else {
+      loginMutation.mutate({ name: username.trim(), password });
     }
+  };
+
+  const isPending = loginMutation.isPending || registerMutation.isPending;
+
+  const switchMode = (next: "login" | "signup") => {
+    setMode(next);
+    setUsername("");
+    setPassword("");
+    setConfirmPassword("");
   };
 
   return (
@@ -97,31 +130,52 @@ export default function LoginPage() {
               THE PARLAY-VOUS LOUNGE
             </CardTitle>
             <CardDescription className="text-muted-foreground">
-              Sign in to submit your picks and trash talk
+              {mode === "login" ? "Sign in to submit your picks and trash talk" : "Create your account to join the action"}
             </CardDescription>
+
+            {/* Mode toggle tabs */}
+            <div className="flex mt-3 rounded-md overflow-hidden border border-neon-cyan/20">
+              <button
+                type="button"
+                onClick={() => switchMode("login")}
+                className={`flex-1 py-2 text-xs font-display tracking-widest transition-colors ${
+                  mode === "login"
+                    ? "bg-neon-cyan text-background"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                SIGN IN
+              </button>
+              <button
+                type="button"
+                onClick={() => switchMode("signup")}
+                className={`flex-1 py-2 text-xs font-display tracking-widest transition-colors ${
+                  mode === "signup"
+                    ? "bg-neon-cyan text-background"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                SIGN UP
+              </button>
+            </div>
           </CardHeader>
+
           <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="player-select" className="text-xs font-display tracking-widest text-muted-foreground uppercase">
-                  Select Player
+                <Label htmlFor="username" className="text-xs font-display tracking-widest text-muted-foreground uppercase">
+                  Username
                 </Label>
-                <Select value={selectedPlayer} onValueChange={setSelectedPlayer}>
-                  <SelectTrigger id="player-select" data-testid="select-player" className="border-neon-cyan/30 focus:border-neon-cyan focus:ring-neon-cyan/20">
-                    <SelectValue placeholder="Choose your player" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {players.map((player) => (
-                      <SelectItem
-                        key={player.id}
-                        value={player.id}
-                        data-testid={`option-player-${player.name.toLowerCase().replace(/\s/g, '-')}`}
-                      >
-                        {player.name} ({player.chips} chips)
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Input
+                  id="username"
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Enter your username"
+                  data-testid="input-username"
+                  autoComplete="username"
+                  className="border-neon-cyan/30 focus:border-neon-cyan focus:ring-neon-cyan/20"
+                />
               </div>
 
               <div className="space-y-2">
@@ -133,24 +187,41 @@ export default function LoginPage() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
+                  placeholder={mode === "signup" ? "Create a password (min 6 chars)" : "Enter your password"}
                   data-testid="input-password"
+                  autoComplete={mode === "signup" ? "new-password" : "current-password"}
                   className="border-neon-cyan/30 focus:border-neon-cyan focus:ring-neon-cyan/20"
                 />
               </div>
 
+              {mode === "signup" && (
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-password" className="text-xs font-display tracking-widest text-muted-foreground uppercase">
+                    Confirm Password
+                  </Label>
+                  <Input
+                    id="confirm-password"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Re-enter your password"
+                    data-testid="input-confirm-password"
+                    autoComplete="new-password"
+                    className="border-neon-cyan/30 focus:border-neon-cyan focus:ring-neon-cyan/20"
+                  />
+                </div>
+              )}
+
               <Button
                 type="submit"
                 className="w-full bg-neon-cyan text-background hover:bg-neon-cyan/90 font-display tracking-widest text-sm"
-                disabled={loginMutation.isPending}
+                disabled={isPending}
                 data-testid="button-login"
               >
-                {loginMutation.isPending ? "LOGGING IN..." : "LET'S GET IT"}
+                {isPending
+                  ? mode === "signup" ? "CREATING ACCOUNT..." : "LOGGING IN..."
+                  : mode === "signup" ? "CREATE ACCOUNT" : "LET'S GET IT"}
               </Button>
-
-              <p className="text-xs text-muted-foreground text-center mt-4">
-                Default password: <span className="font-mono text-neon-cyan/70">password</span>
-              </p>
             </form>
           </CardContent>
         </Card>

@@ -98,6 +98,56 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/auth/register", async (req, res) => {
+    try {
+      const { name, password } = req.body;
+
+      if (!name || !password) {
+        return res.status(400).json({ error: "Username and password are required" });
+      }
+
+      if (name.trim().length < 2) {
+        return res.status(400).json({ error: "Username must be at least 2 characters" });
+      }
+
+      if (password.length < 6) {
+        return res.status(400).json({ error: "Password must be at least 6 characters" });
+      }
+
+      const players = await storage.getPlayers();
+      const existing = players.find((p) => p.name.toLowerCase() === name.trim().toLowerCase());
+      if (existing) {
+        return res.status(409).json({ error: "Username already taken" });
+      }
+
+      const avatars = ["dollar", "brain", "crystal", "mirror", "fire", "star"];
+      const avatar = avatars[Math.floor(Math.random() * avatars.length)];
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      const newPlayer = await storage.createPlayer({
+        name: name.trim(),
+        password: hashedPassword,
+        avatar,
+        chips: 1000,
+      });
+
+      req.session.playerId = newPlayer.id;
+      req.session.playerName = newPlayer.name;
+
+      res.status(201).json({
+        success: true,
+        player: {
+          id: newPlayer.id,
+          name: newPlayer.name,
+          chips: newPlayer.chips,
+          avatar: newPlayer.avatar,
+        },
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create account" });
+    }
+  });
+
   app.post("/api/auth/logout", (req, res) => {
     // M1: Properly destroy the session rather than just clearing fields
     req.session.destroy((err) => {
