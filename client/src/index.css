@@ -168,10 +168,11 @@
   --tracking-normal: 0em;
   --spacing: 0.25rem;
 
-  --neon-cyan: 353 76% 50%;
-  --neon-magenta: 353 76% 50%;
-  --neon-green: 228 4% 51%;
-  --neon-yellow: 353 76% 50%;
+  /* Distinct neon colours for dark/sports theme */
+  --neon-cyan: 182 100% 48%;
+  --neon-magenta: 316 89% 60%;
+  --neon-green: 142 76% 45%;
+  --neon-yellow: 47 100% 55%;
 
   --sidebar-primary-border: hsl(var(--sidebar-primary));
   --sidebar-primary-border: hsl(from hsl(var(--sidebar-primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
@@ -312,5 +313,80 @@
     .font-display {
       letter-spacing: 0.02em;
     }
+  }
+
+  /* ── Neon glow effects ──────────────────────────────────────────────── */
+
+  .neon-glow-cyan {
+    text-shadow:
+      0 0 8px hsl(var(--neon-cyan) / 0.8),
+      0 0 20px hsl(var(--neon-cyan) / 0.5),
+      0 0 40px hsl(var(--neon-cyan) / 0.3);
+  }
+
+  .neon-border-cyan {
+    box-shadow:
+      0 0 6px hsl(var(--neon-cyan) / 0.6),
+      0 0 16px hsl(var(--neon-cyan) / 0.3),
+      inset 0 0 6px hsl(var(--neon-cyan) / 0.1);
+  }
+
+  .neon-glow-magenta {
+    text-shadow:
+      0 0 8px hsl(var(--neon-magenta) / 0.8),
+      0 0 20px hsl(var(--neon-magenta) / 0.5);
+  }
+
+  .neon-glow-yellow {
+    text-shadow:
+      0 0 8px hsl(var(--neon-yellow) / 0.8),
+      0 0 20px hsl(var(--neon-yellow) / 0.5);
+  }
+
+  /* ── Marquee / ticker animation ─────────────────────────────────────── */
+
+  @keyframes marquee {
+    0%   { transform: translateX(0%); }
+    100% { transform: translateX(-50%); }
+  }
+
+  .animate-marquee {
+    animation: marquee 28s linear infinite;
+    white-space: nowrap;
+    display: inline-flex;
+  }
+
+  /* ── Champion pulse ─────────────────────────────────────────────────── */
+
+  @keyframes neon-pulse {
+    0%, 100% {
+      box-shadow:
+        0 0 4px hsl(var(--neon-yellow) / 0.4),
+        0 0 12px hsl(var(--neon-yellow) / 0.2);
+    }
+    50% {
+      box-shadow:
+        0 0 12px hsl(var(--neon-yellow) / 0.8),
+        0 0 28px hsl(var(--neon-yellow) / 0.5),
+        0 0 48px hsl(var(--neon-yellow) / 0.2);
+    }
+  }
+
+  .animate-neon-pulse {
+    animation: neon-pulse 2.5s ease-in-out infinite;
+  }
+
+  /* ── Sports field background pattern ───────────────────────────────── */
+
+  .sports-bg {
+    background-image:
+      radial-gradient(ellipse 80% 40% at 50% 0%, hsl(182 100% 48% / 0.06) 0%, transparent 60%),
+      repeating-linear-gradient(
+        90deg,
+        transparent,
+        transparent 79px,
+        hsl(182 100% 48% / 0.04) 79px,
+        hsl(182 100% 48% / 0.04) 80px
+      );
   }
 }

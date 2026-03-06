@@ -73,8 +73,8 @@ export default function PickCard({
   return (
     <Card
       className={`p-4 border-l-4 ${getBorderColor()} ${
-        status === "win" ? "neon-border-cyan" : ""
-      } ${status === "loss" ? "opacity-60" : ""} ${isShaking ? "animate-shake" : ""}`}
+        status === "win" ? "neon-border-cyan bg-neon-green/5" : ""
+      } ${status === "loss" ? "opacity-50" : ""} ${isShaking ? "animate-shake" : ""}`}
       data-testid={`card-pick-${playerName.toLowerCase().replace(/\s+/g, '-')}-${pickType.toLowerCase()}`}
     >
       <div className="space-y-3">
@@ -105,15 +105,21 @@ export default function PickCard({
               {playerName}
             </p>
             <p
-              className="text-lg font-semibold text-foreground"
+              className={`text-lg font-semibold ${
+                status === "win"
+                  ? "text-neon-green"
+                  : status === "loss"
+                  ? "text-destructive line-through"
+                  : "text-foreground"
+              }`}
               data-testid={`text-pick-${playerName.toLowerCase().replace(/\s+/g, '-')}`}
             >
               {pick}
             </p>
             {sportConfig && SportIcon && (
               <div className="flex items-center gap-1.5 mt-2" data-testid="sport-info">
-                <SportIcon className={`w-3.5 h-3.5 ${sportConfig.color}`} />
-                <span className={`text-xs ${sportConfig.color}`}>
+                <SportIcon className={`w-4 h-4 ${sportConfig.color}`} />
+                <span className={`text-xs font-medium ${sportConfig.color}`}>
                   {sportConfig.label}
                 </span>
               </div>
@@ -140,14 +146,25 @@ export default function PickCard({
           </p>
         )}
 
-        <div className="flex items-center gap-2 pt-2 border-t border-border">
-          <Coins className="w-5 h-5 text-primary" data-testid="icon-chip-amount" />
+        <div className={`flex items-center gap-2 pt-2 border-t ${
+          status === "win" ? "border-neon-green/30" : "border-border"
+        }`}>
+          <Coins
+            className={`w-5 h-5 ${status === "win" ? "text-neon-green" : "text-primary"}`}
+            data-testid="icon-chip-amount"
+          />
           <span
-            className="font-bold text-foreground"
+            className={`font-bold ${status === "win" ? "text-neon-green" : "text-foreground"}`}
             data-testid={`text-chip-amount-${chips}`}
           >
             {chips} CHIPS
           </span>
+          {status === "win" && (
+            <span className="text-xs text-neon-green/70 ml-auto font-display tracking-wider">W</span>
+          )}
+          {status === "loss" && (
+            <span className="text-xs text-destructive/70 ml-auto font-display tracking-wider">L</span>
+          )}
         </div>
       </div>
     </Card>

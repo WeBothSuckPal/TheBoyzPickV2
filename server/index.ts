@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
+import MemoryStore from "memorystore";
 import { createServer } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { Pool } from "@neondatabase/serverless";
@@ -19,22 +20,32 @@ declare module 'express-session' {
   }
 }
 
-const PgSession = connectPgSimple(session);
-const sessionPool = new Pool({ connectionString: process.env.DATABASE_URL });
+// Use persistent DB sessions in production (Vercel) — memorystore in development
+const isProduction = process.env.NODE_ENV === 'production';
+let sessionStore: session.Store;
 
-app.use(session({
-  store: new PgSession({
+if (isProduction) {
+  const PgSession = connectPgSimple(session);
+  const sessionPool = new Pool({ connectionString: process.env.DATABASE_URL });
+  sessionStore = new PgSession({
     pool: sessionPool as any,
     tableName: "session",
     createTableIfMissing: true,
-  }),
+  });
+} else {
+  const MemorySessionStore = MemoryStore(session);
+  sessionStore = new MemorySessionStore({ checkPeriod: 86400000 });
+}
+
+app.use(session({
+  store: sessionStore,
   secret: process.env.SESSION_SECRET || 'theboyzpick-secret-key-change-in-production',
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
+    secure: isProduction,
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    maxAge: 24 * 60 * 60 * 1000,
   }
 }));
 
@@ -59,11 +70,9 @@ app.use((req, res, next) => {
       if (capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }
-
       if (logLine.length > 80) {
         logLine = logLine.slice(0, 79) + "…";
       }
-
       log(logLine);
     }
   });
@@ -72,25 +81,21 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Seed database with default players if needed
   await seedDatabase();
 
-  // Start cron jobs only in development (Vercel uses its own cron via /api/cron/fetch-games)
-  if (process.env.NODE_ENV !== 'production') {
+  // Cron jobs only in development — Vercel handles scheduling via /api/cron/fetch-games
+  if (!isProduction) {
     startCronJobs();
   }
 
   const httpServer = createServer(app);
 
-  // WebSocket server for real-time updates
   const wss = new WebSocketServer({ server: httpServer, path: "/ws" });
   const clients = new Set<WebSocket>();
 
   wss.on("connection", (ws) => {
     clients.add(ws);
-    ws.on("close", () => {
-      clients.delete(ws);
-    });
+    ws.on("close", () => { clients.delete(ws); });
   });
 
   function broadcast(message: any) {
@@ -117,10 +122,7 @@ app.use((req, res, next) => {
   }
 
   const port = parseInt(process.env.PORT || '5000', 10);
-  httpServer.listen({
-    port,
-    host: "0.0.0.0",
-  }, () => {
+  httpServer.listen({ port, host: "0.0.0.0" }, () => {
     log(`serving on port ${port}`);
   });
 })();
