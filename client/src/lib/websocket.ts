@@ -1,5 +1,7 @@
 let ws: WebSocket | null = null;
-let reconnectTimer: NodeJS.Timeout | null = null;
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+let reconnectAttempts = 0;
+const MAX_RECONNECT_ATTEMPTS = 5;
 const listeners = new Set<(data: any) => void>();
 
 export function connectWebSocket() {
@@ -10,6 +12,7 @@ export function connectWebSocket() {
 
   ws.onopen = () => {
     console.log("WebSocket connected");
+    reconnectAttempts = 0;
   };
 
   ws.onmessage = (event) => {
@@ -22,15 +25,20 @@ export function connectWebSocket() {
   };
 
   ws.onclose = () => {
-    console.log("WebSocket disconnected, reconnecting...");
+    if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+      // Give up reconnecting — polling will keep data fresh
+      return;
+    }
+    console.log(`WebSocket disconnected, reconnecting... (attempt ${reconnectAttempts + 1}/${MAX_RECONNECT_ATTEMPTS})`);
     if (reconnectTimer) clearTimeout(reconnectTimer);
     reconnectTimer = setTimeout(() => {
+      reconnectAttempts++;
       connectWebSocket();
     }, 3000);
   };
 
-  ws.onerror = (error) => {
-    console.error("WebSocket error:", error);
+  ws.onerror = () => {
+    // Errors are handled by onclose — suppress console noise on Vercel
   };
 }
 

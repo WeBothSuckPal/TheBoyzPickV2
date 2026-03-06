@@ -1,6 +1,6 @@
 import { db } from "./db";
 import { players, type InsertPlayer } from "@shared/schema";
-import { log } from "./vite";
+import { log } from "./logger";
 import { getCurrentWeek, formatWeekDisplay } from "./weekUtils";
 import bcrypt from "bcryptjs";
 

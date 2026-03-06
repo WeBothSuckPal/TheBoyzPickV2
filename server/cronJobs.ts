@@ -1,6 +1,6 @@
 import cron from "node-cron";
 import { storage } from "./storage";
-import { log } from "./vite";
+import { log } from "./logger";
 
 const SPORTS = [
   "americanfootball_ncaaf",
@@ -10,7 +10,7 @@ const SPORTS = [
   "basketball_nba",
 ];
 
-async function fetchGamesForAllSports() {
+export async function fetchGamesForAllSports() {
   try {
     log("Starting daily game fetch for all sports...");
     

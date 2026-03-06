@@ -97,6 +97,7 @@ export default function HomePage() {
 
   const { data: players = [], refetch: refetchPlayers } = useQuery<Player[]>({
     queryKey: ["/api/players"],
+    refetchInterval: 10000,
   });
 
   const { data: activeWeek } = useQuery<Week>({
@@ -118,6 +119,7 @@ export default function HomePage() {
   const { data: picks = [], refetch: refetchPicks } = useQuery<Pick[]>({
     queryKey: ["/api/picks", viewingWeekId],
     enabled: !!viewingWeekId,
+    refetchInterval: 10000,
     queryFn: async () => {
       const response = await fetch(`/api/picks?weekId=${viewingWeekId}`, { credentials: "include" });
       if (!response.ok) throw new Error("Failed to fetch picks");
@@ -138,6 +140,7 @@ export default function HomePage() {
 
   const { data: chatMessagesData = [], refetch: refetchChat } = useQuery<ChatMessageData[]>({
     queryKey: ["/api/chat/messages"],
+    refetchInterval: 5000,
   });
 
   const chatMessages = chatMessagesData.map((msg) => ({
