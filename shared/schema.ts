@@ -6,9 +6,11 @@ import { z } from "zod";
 export const players = pgTable("players", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull().unique(),
+  email: text("email").unique(),
   password: text("password").notNull(),
   chips: integer("chips").notNull().default(1000),
   avatar: text("avatar").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 export const insertPlayerSchema = createInsertSchema(players).omit({ id: true });

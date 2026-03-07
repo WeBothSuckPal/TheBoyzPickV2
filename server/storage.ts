@@ -34,6 +34,7 @@ export interface IStorage {
   getPlayers(): Promise<Player[]>;
   getPlayer(id: string): Promise<Player | undefined>;
   getPlayerByName(name: string): Promise<Player | undefined>;
+  getPlayerByEmail(email: string): Promise<Player | undefined>;
   createPlayer(player: InsertPlayer): Promise<Player>;
   updatePlayerChips(playerId: string, chips: number): Promise<Player | undefined>;
   updatePlayerPassword(playerId: string, hashedPassword: string): Promise<Player | undefined>;
@@ -98,13 +99,14 @@ export class MemStorage implements IStorage {
 
     defaultPlayers.forEach((p) => {
       const id = randomUUID();
-      // H4: Include password field so bcrypt.compare works in dev/MemStorage mode
       const player: Player = {
         id,
         name: p.name,
+        email: p.email ?? null,
         password: p.password,
         avatar: p.avatar,
         chips: p.chips ?? 1000,
+        createdAt: new Date(),
       };
       this.players.set(id, player);
     });
@@ -131,14 +133,22 @@ export class MemStorage implements IStorage {
     return Array.from(this.players.values()).find((p) => p.name === name);
   }
 
+  async getPlayerByEmail(email: string): Promise<Player | undefined> {
+    return Array.from(this.players.values()).find(
+      (p) => p.email?.toLowerCase() === email.toLowerCase()
+    );
+  }
+
   async createPlayer(insertPlayer: InsertPlayer): Promise<Player> {
     const id = randomUUID();
     const player: Player = {
       id,
       name: insertPlayer.name,
+      email: insertPlayer.email ?? null,
       password: insertPlayer.password,
       avatar: insertPlayer.avatar,
       chips: insertPlayer.chips ?? 1000,
+      createdAt: new Date(),
     };
     this.players.set(id, player);
     return player;
@@ -345,6 +355,11 @@ export class DbStorage implements IStorage {
 
   async getPlayerByName(name: string): Promise<Player | undefined> {
     const results = await db.select().from(playersTable).where(eq(playersTable.name, name));
+    return results[0];
+  }
+
+  async getPlayerByEmail(email: string): Promise<Player | undefined> {
+    const results = await db.select().from(playersTable).where(eq(playersTable.email, email.toLowerCase()));
     return results[0];
   }
 
