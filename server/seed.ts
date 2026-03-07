@@ -8,11 +8,12 @@ import bcrypt from "bcryptjs";
 // Players can change this after first login
 const DEFAULT_PASSWORD_HASH = bcrypt.hashSync("password", 10);
 
+// isAdmin is intentionally omitted — applyMigrations sets Carter's flag via SQL UPDATE
 const DEFAULT_PLAYERS: InsertPlayer[] = [
-  { name: "Carter", password: DEFAULT_PASSWORD_HASH, chips: 1000, avatar: "dollar", isAdmin: true },
-  { name: "Chub", password: DEFAULT_PASSWORD_HASH, chips: 1000, avatar: "brain", isAdmin: false },
-  { name: "Perky", password: DEFAULT_PASSWORD_HASH, chips: 1000, avatar: "crystal", isAdmin: false },
-  { name: "Jerry Fader", password: DEFAULT_PASSWORD_HASH, chips: 1000, avatar: "mirror", isAdmin: false },
+  { name: "Carter",     password: DEFAULT_PASSWORD_HASH, chips: 1000, avatar: "dollar" },
+  { name: "Chub",       password: DEFAULT_PASSWORD_HASH, chips: 1000, avatar: "brain"  },
+  { name: "Perky",      password: DEFAULT_PASSWORD_HASH, chips: 1000, avatar: "crystal" },
+  { name: "Jerry Fader",password: DEFAULT_PASSWORD_HASH, chips: 1000, avatar: "mirror" },
 ];
 
 export async function seedDatabase() {

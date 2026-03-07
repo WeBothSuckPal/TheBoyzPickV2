@@ -107,7 +107,7 @@ export class MemStorage implements IStorage {
         password: p.password,
         avatar: p.avatar,
         chips: p.chips ?? 1000,
-        isAdmin: p.isAdmin ?? false,
+        isAdmin: false,
         createdAt: new Date(),
       };
       this.players.set(id, player);
@@ -150,7 +150,7 @@ export class MemStorage implements IStorage {
       password: insertPlayer.password,
       avatar: insertPlayer.avatar,
       chips: insertPlayer.chips ?? 1000,
-      isAdmin: insertPlayer.isAdmin ?? false,
+      isAdmin: false,
       createdAt: new Date(),
     };
     this.players.set(id, player);
@@ -343,7 +343,7 @@ export class MemStorage implements IStorage {
 
   async createChipTransaction(tx: InsertChipTransaction): Promise<ChipTransaction> {
     const id = randomUUID();
-    const transaction: ChipTransaction = { id, ...tx, createdAt: new Date() };
+    const transaction: ChipTransaction = { id, ...tx, weekId: tx.weekId ?? null, createdAt: new Date() };
     this.chipTransactions.set(id, transaction);
     return transaction;
   }
