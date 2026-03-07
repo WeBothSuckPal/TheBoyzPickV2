@@ -14,72 +14,73 @@
   --elevate-1: rgba(0,0,0, .03);
   --elevate-2: rgba(0,0,0, .08);
 
-  --background: 0 0% 95%;
-  --foreground: 0 0% 18%;
-  --border: 0 0% 85%;
+  --background: 220 20% 96%;
+  --foreground: 220 20% 12%;
+  --border: 220 12% 84%;
 
   --card: 0 0% 100%;
-  --card-foreground: 0 0% 18%;
-  --card-border: 353 76% 50%;
+  --card-foreground: 220 20% 12%;
+  --card-border: 182 70% 35%;
 
   --sidebar: 0 0% 100%;
-  --sidebar-foreground: 0 0% 18%;
-  --sidebar-border: 0 0% 85%;
-  --sidebar-primary: 353 76% 50%;
+  --sidebar-foreground: 220 20% 12%;
+  --sidebar-border: 220 12% 84%;
+  --sidebar-primary: 182 70% 35%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 0 0% 90%;
-  --sidebar-accent-foreground: 353 76% 50%;
-  --sidebar-ring: 353 76% 50%;
+  --sidebar-accent: 220 14% 92%;
+  --sidebar-accent-foreground: 182 70% 35%;
+  --sidebar-ring: 182 70% 35%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 0 0% 18%;
-  --popover-border: 0 0% 85%;
+  --popover-foreground: 220 20% 12%;
+  --popover-border: 220 12% 84%;
 
-  --primary: 353 76% 50%;
+  --primary: 182 70% 35%;
   --primary-foreground: 0 0% 100%;
 
-  --secondary: 228 4% 51%;
+  --secondary: 220 10% 50%;
   --secondary-foreground: 0 0% 100%;
 
-  --muted: 0 0% 90%;
-  --muted-foreground: 228 4% 35%;
+  --muted: 220 14% 92%;
+  --muted-foreground: 220 10% 42%;
 
-  --accent: 353 76% 50%;
+  --accent: 316 70% 45%;
   --accent-foreground: 0 0% 100%;
 
-  --destructive: 2.04 74.62% 61.37%;
+  --destructive: 4 80% 55%;
   --destructive-foreground: 0 0% 100%;
 
-  --input: 0 0% 85%;
-  --ring: 353 76% 50%;
+  --input: 220 12% 84%;
+  --ring: 182 70% 35%;
 
-  --chart-1: 353 76% 50%;
-  --chart-2: 353 76% 60%;
-  --chart-3: 228 4% 51%;
-  --chart-4: 228 4% 40%;
-  --chart-5: 353 76% 40%;
+  --chart-1: 182 70% 35%;
+  --chart-2: 316 70% 45%;
+  --chart-3: 142 60% 38%;
+  --chart-4: 40 85% 48%;
+  --chart-5: 220 10% 50%;
 
   --font-sans: 'Montserrat', sans-serif;
   --font-serif: Georgia, serif;
   --font-mono: Menlo, monospace;
   --font-display: 'Anton', 'Bebas Neue', sans-serif;
 
-  --radius: 0rem;
-  --shadow-2xs: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00);
-  --shadow-xs: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00);
-  --shadow-sm: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00), 0px 1px 2px -1px hsl(202.8169 89.1213% 53.1373% / 0.00);
-  --shadow: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00), 0px 1px 2px -1px hsl(202.8169 89.1213% 53.1373% / 0.00);
-  --shadow-md: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00), 0px 2px 4px -1px hsl(202.8169 89.1213% 53.1373% / 0.00);
-  --shadow-lg: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00), 0px 4px 6px -1px hsl(202.8169 89.1213% 53.1373% / 0.00);
-  --shadow-xl: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00), 0px 8px 10px -1px hsl(202.8169 89.1213% 53.1373% / 0.00);
-  --shadow-2xl: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00);
+  --radius: 0.75rem;
+  --shadow-2xs: 0px 1px 2px 0px rgba(0,0,0,0.06);
+  --shadow-xs:  0px 1px 3px 0px rgba(0,0,0,0.08);
+  --shadow-sm:  0px 2px 4px 0px rgba(0,0,0,0.08), 0px 1px 2px -1px rgba(0,0,0,0.06);
+  --shadow:     0px 2px 6px 0px rgba(0,0,0,0.10), 0px 1px 3px -1px rgba(0,0,0,0.08);
+  --shadow-md:  0px 4px 8px 0px rgba(0,0,0,0.10), 0px 2px 4px -1px rgba(0,0,0,0.08);
+  --shadow-lg:  0px 8px 16px 0px rgba(0,0,0,0.10), 0px 4px 6px -1px rgba(0,0,0,0.08);
+  --shadow-xl:  0px 16px 24px 0px rgba(0,0,0,0.10), 0px 8px 10px -1px rgba(0,0,0,0.08);
+  --shadow-2xl: 0px 24px 40px 0px rgba(0,0,0,0.12);
   --tracking-normal: 0em;
   --spacing: 0.25rem;
 
-  --neon-cyan: 353 76% 50%;
-  --neon-magenta: 353 76% 50%;
-  --neon-green: 228 4% 51%;
-  --neon-yellow: 353 76% 50%;
+  /* Distinct brand colours for light mode */
+  --neon-cyan:    182 70% 35%;   /* deep teal */
+  --neon-magenta: 316 70% 45%;   /* hot pink  */
+  --neon-green:   142 60% 38%;   /* emerald   */
+  --neon-yellow:  40  85% 48%;   /* gold      */
 
   --sidebar-primary-border: hsl(var(--sidebar-primary));
   --sidebar-primary-border: hsl(from hsl(var(--sidebar-primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
@@ -98,81 +99,82 @@
 }
 
 .dark {
-  --button-outline: rgba(255,255,255, .10);
-  --badge-outline: rgba(255,255,255, .05);
+  --button-outline: rgba(255,255,255, .08);
+  --badge-outline: rgba(255,255,255, .04);
 
-  --opaque-button-border-intensity: 9;
+  --opaque-button-border-intensity: 8;
 
-  --elevate-1: rgba(255,255,255, .04);
-  --elevate-2: rgba(255,255,255, .09);
+  --elevate-1: rgba(255,255,255, .03);
+  --elevate-2: rgba(255,255,255, .07);
 
-  --background: 0 0% 18%;
-  --foreground: 0 0% 100%;
-  --border: 0 0% 30%;
+  /* Deep navy-black — inspired by DraftKings / PrizePicks */
+  --background: 222 32% 6%;
+  --foreground: 210 18% 94%;
+  --border: 222 18% 18%;
 
-  --card: 0 0% 20%;
-  --card-foreground: 0 0% 95%;
-  --card-border: 353 76% 50%;
+  --card: 222 26% 10%;
+  --card-foreground: 210 18% 94%;
+  --card-border: 182 100% 48%;
 
-  --sidebar: 0 0% 20%;
-  --sidebar-foreground: 0 0% 95%;
-  --sidebar-border: 0 0% 30%;
-  --sidebar-primary: 353 76% 50%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 0 0% 25%;
-  --sidebar-accent-foreground: 353 76% 50%;
-  --sidebar-ring: 353 76% 50%;
+  --sidebar: 222 26% 9%;
+  --sidebar-foreground: 210 18% 94%;
+  --sidebar-border: 222 18% 18%;
+  --sidebar-primary: 182 100% 48%;
+  --sidebar-primary-foreground: 222 32% 6%;
+  --sidebar-accent: 222 20% 14%;
+  --sidebar-accent-foreground: 182 100% 48%;
+  --sidebar-ring: 182 100% 48%;
 
-  --popover: 0 0% 0%;
-  --popover-foreground: 200 6.6667% 91.1765%;
-  --popover-border: 208 28% 18%;
+  --popover: 222 30% 8%;
+  --popover-foreground: 210 18% 94%;
+  --popover-border: 222 18% 20%;
 
-  --primary: 353 76% 50%;
-  --primary-foreground: 0 0% 100%;
+  --primary: 182 100% 48%;
+  --primary-foreground: 222 32% 6%;
 
-  --secondary: 228 4% 51%;
-  --secondary-foreground: 0 0% 100%;
+  --secondary: 222 16% 30%;
+  --secondary-foreground: 210 18% 94%;
 
-  --muted: 0 0% 25%;
-  --muted-foreground: 228 4% 65%;
+  --muted: 222 20% 14%;
+  --muted-foreground: 220 12% 58%;
 
-  --accent: 353 76% 50%;
+  --accent: 316 89% 60%;
   --accent-foreground: 0 0% 100%;
 
-  --destructive: 356.3033 90.5579% 54.3137%;
+  --destructive: 4 82% 58%;
   --destructive-foreground: 0 0% 100%;
 
-  --input: 0 0% 30%;
-  --ring: 353 76% 50%;
+  --input: 222 20% 16%;
+  --ring: 182 100% 48%;
 
-  --chart-1: 353 76% 50%;
-  --chart-2: 353 76% 60%;
-  --chart-3: 228 4% 51%;
-  --chart-4: 228 4% 40%;
-  --chart-5: 353 76% 40%;
+  --chart-1: 182 100% 48%;
+  --chart-2: 316 89% 60%;
+  --chart-3: 142 76% 45%;
+  --chart-4: 47 100% 55%;
+  --chart-5: 220 16% 50%;
 
   --font-sans: 'Montserrat', sans-serif;
   --font-serif: Georgia, serif;
   --font-mono: Menlo, monospace;
   --font-display: 'Anton', 'Bebas Neue', sans-serif;
 
-  --radius: 1.3rem;
-  --shadow-2xs: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00);
-  --shadow-xs: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00);
-  --shadow-sm: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00), 0px 1px 2px -1px hsl(202.8169 89.1213% 53.1373% / 0.00);
-  --shadow: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00), 0px 1px 2px -1px hsl(202.8169 89.1213% 53.1373% / 0.00);
-  --shadow-md: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00), 0px 2px 4px -1px hsl(202.8169 89.1213% 53.1373% / 0.00);
-  --shadow-lg: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00), 0px 4px 6px -1px hsl(202.8169 89.1213% 53.1373% / 0.00);
-  --shadow-xl: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00), 0px 8px 10px -1px hsl(202.8169 89.1213% 53.1373% / 0.00);
-  --shadow-2xl: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00);
+  --radius: 0.75rem;
+  --shadow-2xs: 0px 1px 3px 0px rgba(0,0,0,0.40);
+  --shadow-xs:  0px 2px 4px 0px rgba(0,0,0,0.45);
+  --shadow-sm:  0px 2px 6px 0px rgba(0,0,0,0.45), 0px 1px 2px -1px rgba(0,0,0,0.40);
+  --shadow:     0px 4px 8px 0px rgba(0,0,0,0.50), 0px 2px 4px -1px rgba(0,0,0,0.40);
+  --shadow-md:  0px 6px 12px 0px rgba(0,0,0,0.50), 0px 3px 6px -1px rgba(0,0,0,0.40);
+  --shadow-lg:  0px 10px 20px 0px rgba(0,0,0,0.55), 0px 5px 8px -1px rgba(0,0,0,0.45);
+  --shadow-xl:  0px 16px 32px 0px rgba(0,0,0,0.60), 0px 8px 12px -1px rgba(0,0,0,0.50);
+  --shadow-2xl: 0px 24px 48px 0px rgba(0,0,0,0.65);
   --tracking-normal: 0em;
   --spacing: 0.25rem;
 
-  /* Distinct neon colours for dark/sports theme */
-  --neon-cyan: 182 100% 48%;
-  --neon-magenta: 316 89% 60%;
-  --neon-green: 142 76% 45%;
-  --neon-yellow: 47 100% 55%;
+  /* Vivid neon accents for dark sports theme */
+  --neon-cyan:    182 100% 48%;   /* electric cyan  */
+  --neon-magenta: 316 89%  60%;   /* hot pink       */
+  --neon-green:   142 76%  45%;   /* emerald        */
+  --neon-yellow:  47  100% 55%;   /* gold           */
 
   --sidebar-primary-border: hsl(var(--sidebar-primary));
   --sidebar-primary-border: hsl(from hsl(var(--sidebar-primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
@@ -380,13 +382,26 @@
 
   .sports-bg {
     background-image:
-      radial-gradient(ellipse 80% 40% at 50% 0%, hsl(182 100% 48% / 0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 90% 50% at 50% 0%, hsl(182 100% 48% / 0.07) 0%, transparent 65%),
+      radial-gradient(ellipse 40% 30% at 80% 80%, hsl(316 89% 60% / 0.04) 0%, transparent 60%),
       repeating-linear-gradient(
         90deg,
         transparent,
         transparent 79px,
-        hsl(182 100% 48% / 0.04) 79px,
-        hsl(182 100% 48% / 0.04) 80px
+        hsl(182 100% 48% / 0.03) 79px,
+        hsl(182 100% 48% / 0.03) 80px
+      );
+  }
+
+  :root .sports-bg {
+    background-image:
+      radial-gradient(ellipse 90% 50% at 50% 0%, hsl(182 70% 35% / 0.06) 0%, transparent 65%),
+      repeating-linear-gradient(
+        90deg,
+        transparent,
+        transparent 79px,
+        hsl(182 70% 35% / 0.025) 79px,
+        hsl(182 70% 35% / 0.025) 80px
       );
   }
 }

@@ -38,6 +38,7 @@ app.use(
     cookie: {
       secure: true,
       httpOnly: true,
+      sameSite: "lax",   // required so cookies survive Vercel's edge redirects
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
     },
   })
@@ -77,7 +78,13 @@ function initialize(): Promise<void> {
 }
 
 const handler = async (req: Request, res: Response) => {
-  await initialize();
+  try {
+    await initialize();
+  } catch (err: any) {
+    console.error("Initialization failed:", err?.message ?? err);
+    res.status(503).json({ error: "Server initialization failed. Please try again." });
+    return;
+  }
   app(req, res);
 };
 

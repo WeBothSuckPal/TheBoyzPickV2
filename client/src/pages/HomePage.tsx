@@ -7,6 +7,7 @@ import PickCard from "@/components/PickCard";
 import ConsensusBar from "@/components/ConsensusBar";
 import PickSubmissionDialog from "@/components/PickSubmissionDialog";
 import SportsTicker from "@/components/SportsTicker";
+import LiveScores from "@/components/LiveScores";
 import ChatBox from "@/components/ChatBox";
 import CountdownTimer from "@/components/CountdownTimer";
 import ChangePasswordDialog from "@/components/ChangePasswordDialog";
@@ -403,6 +404,10 @@ export default function HomePage() {
           <p className="text-xs text-muted-foreground mt-4 opacity-60">
             Week {activeWeek?.weekNumber || "..."} is live — don't miss the action.
           </p>
+          {/* Live scores widget in hero */}
+          <div className="mt-8 max-w-2xl mx-auto w-full text-left">
+            <LiveScores />
+          </div>
         </div>
       )}
 
