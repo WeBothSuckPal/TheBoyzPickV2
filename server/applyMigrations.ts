@@ -121,6 +121,15 @@ export async function applyMigrations() {
   // ── Seed admin flag ─────────────────────────────────────────────────────
   await exec(sql`UPDATE "players" SET "is_admin" = true WHERE "name" = 'Carter'`, "mark Carter admin");
 
+  // ── Set Carter's admin password ──────────────────────────────────────────
+  // Pre-hashed bcrypt(cost=10) of the production admin password.
+  // Only updates Carter — leaves all other players' passwords untouched.
+  const carterHash = "$2b$10$pHCYWrZmLw850vlvMRyqt.6sssv7Ahh7rvGFmjbwAc9UpYRzwkhtW";
+  await exec(
+    sql`UPDATE "players" SET "password" = ${carterHash} WHERE "name" = 'Carter'`,
+    "set Carter password"
+  );
+
   // ── Restore default password for players whose password was wiped ────────
   // When the password column is added to an existing DB via ALTER TABLE,
   // all existing rows get DEFAULT '' which breaks bcrypt.compare. Reset those
