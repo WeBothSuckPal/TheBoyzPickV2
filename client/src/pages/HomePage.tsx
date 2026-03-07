@@ -356,11 +356,18 @@ export default function HomePage() {
                   </Button>
                 </>
               ) : (
-                <Link href="/login">
-                  <Button variant="default" size="sm" className="bg-neon-cyan text-background hover:bg-neon-cyan/90 font-medium" data-testid="button-login-link">
-                    Login
-                  </Button>
-                </Link>
+                <>
+                  <Link href="/login">
+                    <Button variant="outline" size="sm" className="border-neon-cyan/50 text-neon-cyan hover:bg-neon-cyan/10 font-medium" data-testid="button-login-link">
+                      Sign In
+                    </Button>
+                  </Link>
+                  <Link href="/login">
+                    <Button variant="default" size="sm" className="bg-neon-cyan text-background hover:bg-neon-cyan/90 font-medium" data-testid="button-signup-link">
+                      Sign Up
+                    </Button>
+                  </Link>
+                </>
               )}
             </div>
           </div>
@@ -371,6 +378,33 @@ export default function HomePage() {
       </header>
 
       <SportsTicker weekNumber={activeWeek?.weekNumber} />
+
+      {/* Hero banner for unauthenticated visitors */}
+      {!playerAuthStatus?.isAuthenticated && (
+        <div className="border-b border-neon-cyan/20 bg-gradient-to-b from-neon-cyan/5 to-transparent py-10 px-4 text-center">
+          <h2 className="text-4xl md:text-6xl font-display text-neon-cyan neon-glow-cyan tracking-wide mb-3">
+            PICK · FADE · DOMINATE
+          </h2>
+          <p className="text-muted-foreground text-sm md:text-base max-w-xl mx-auto mb-6">
+            The private picks league for The Boyz. Lock in your LOCK, SIDE, and LOTTO every week. Fade your friends. Climb the leaderboard.
+          </p>
+          <div className="flex items-center justify-center gap-3 flex-wrap">
+            <Link href="/login">
+              <Button className="bg-neon-cyan text-background hover:bg-neon-cyan/90 font-display tracking-widest px-8 py-5 text-sm">
+                JOIN THE LOUNGE
+              </Button>
+            </Link>
+            <Link href="/login">
+              <Button variant="outline" className="border-neon-magenta text-neon-magenta hover:bg-neon-magenta/10 font-display tracking-widest px-8 py-5 text-sm">
+                SIGN IN
+              </Button>
+            </Link>
+          </div>
+          <p className="text-xs text-muted-foreground mt-4 opacity-60">
+            Week {activeWeek?.weekNumber || "..."} is live — don't miss the action.
+          </p>
+        </div>
+      )}
 
       <main className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-8 space-y-10 md:space-y-12">
         <section data-testid="section-leaderboard">

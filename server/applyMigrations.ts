@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import { db } from "./db";
 import { log } from "./logger";
+import bcrypt from "bcryptjs";
 
 /**
  * Idempotent bootstrap — creates all app tables if missing and adds any
@@ -119,6 +120,20 @@ export async function applyMigrations() {
 
   // ── Seed admin flag ─────────────────────────────────────────────────────
   await exec(sql`UPDATE "players" SET "is_admin" = true WHERE "name" = 'Carter'`, "mark Carter admin");
+
+  // ── Restore default password for players whose password was wiped ────────
+  // When the password column is added to an existing DB via ALTER TABLE,
+  // all existing rows get DEFAULT '' which breaks bcrypt.compare. Reset those
+  // rows to the known default password ("password") so existing players can
+  // still log in.
+  try {
+    const defaultHash = await bcrypt.hash("password", 10);
+    await db.execute(
+      sql`UPDATE "players" SET "password" = ${defaultHash} WHERE "password" = '' OR "password" IS NULL`
+    );
+  } catch (err: any) {
+    console.error("Migration step failed (restore default passwords):", err?.message ?? err);
+  }
 
   log("Database migrations applied successfully.");
 }

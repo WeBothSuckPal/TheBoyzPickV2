@@ -72,8 +72,9 @@ export async function registerRoutes(
           isAdmin: player.isAdmin,
         },
       });
-    } catch (error) {
-      res.status(500).json({ error: "Failed to login" });
+    } catch (error: any) {
+      console.error("Login error:", error?.message ?? error);
+      res.status(500).json({ error: error?.message ?? "Failed to login" });
     }
   });
 
@@ -172,8 +173,9 @@ export async function registerRoutes(
           avatar: newPlayer.avatar,
         },
       });
-    } catch (error) {
-      res.status(500).json({ error: "Failed to create account" });
+    } catch (error: any) {
+      console.error("Register error:", error?.message ?? error);
+      res.status(500).json({ error: error?.message ?? "Failed to create account" });
     }
   });
 
