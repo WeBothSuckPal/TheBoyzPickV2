@@ -27,35 +27,42 @@ export async function registerRoutes(
   // Player Authentication Routes
   app.post("/api/auth/login", async (req, res) => {
     try {
-      const { name, password } = req.body;
-      
-      if (!name || !password) {
-        return res.status(400).json({ error: "Name and password are required" });
+      // Accept either { identifier, password } (new) or { name, password } (legacy)
+      const { identifier, name, password } = req.body;
+      const login = (identifier || name || "").trim();
+
+      if (!login || !password) {
+        return res.status(400).json({ error: "Email/username and password are required" });
       }
 
-      const players = await storage.getPlayers();
-      const player = players.find((p) => p.name === name);
+      // Try by email first, then fall back to username
+      const isEmail = login.includes("@");
+      let player = isEmail
+        ? await storage.getPlayerByEmail(login)
+        : await storage.getPlayerByName(login);
+
+      // If email lookup found nothing, also try as username (user typed email-like username)
+      if (!player && isEmail) {
+        player = await storage.getPlayerByName(login);
+      }
 
       if (!player) {
         return res.status(401).json({ error: "Invalid credentials" });
       }
 
       const isValidPassword = await bcrypt.compare(password, player.password);
-
       if (!isValidPassword) {
         return res.status(401).json({ error: "Invalid credentials" });
       }
 
-      // Store player ID in session
       req.session.playerId = player.id;
       req.session.playerName = player.name;
-      
-      // Grant admin access to Carter
+
       if (player.name === "Carter") {
         req.session.isAdminAuthenticated = true;
       }
 
-      res.json({ 
+      res.json({
         success: true,
         player: {
           id: player.id,
@@ -100,24 +107,43 @@ export async function registerRoutes(
 
   app.post("/api/auth/register", async (req, res) => {
     try {
-      const { name, password } = req.body;
+      const { name, email, password } = req.body;
 
-      if (!name || !password) {
-        return res.status(400).json({ error: "Username and password are required" });
+      // --- Field presence ---
+      if (!name || !email || !password) {
+        return res.status(400).json({ error: "Username, email, and password are required" });
       }
 
-      if (name.trim().length < 2) {
+      // --- Username rules (like Discord / Reddit) ---
+      const trimmedName = name.trim();
+      if (trimmedName.length < 2) {
         return res.status(400).json({ error: "Username must be at least 2 characters" });
       }
-
-      if (password.length < 6) {
-        return res.status(400).json({ error: "Password must be at least 6 characters" });
+      if (trimmedName.length > 30) {
+        return res.status(400).json({ error: "Username must be 30 characters or fewer" });
       }
 
-      const players = await storage.getPlayers();
-      const existing = players.find((p) => p.name.toLowerCase() === name.trim().toLowerCase());
-      if (existing) {
+      // --- Email format (like every major platform) ---
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const trimmedEmail = email.trim().toLowerCase();
+      if (!emailRegex.test(trimmedEmail)) {
+        return res.status(400).json({ error: "Please enter a valid email address" });
+      }
+
+      // --- Password strength (DraftKings / ESPN minimum: 8 chars) ---
+      if (password.length < 8) {
+        return res.status(400).json({ error: "Password must be at least 8 characters" });
+      }
+
+      // --- Uniqueness checks ---
+      const existingByName = await storage.getPlayerByName(trimmedName);
+      if (existingByName) {
         return res.status(409).json({ error: "Username already taken" });
+      }
+
+      const existingByEmail = await storage.getPlayerByEmail(trimmedEmail);
+      if (existingByEmail) {
+        return res.status(409).json({ error: "An account with that email already exists" });
       }
 
       const avatars = ["dollar", "brain", "crystal", "mirror", "fire", "star"];
@@ -125,7 +151,8 @@ export async function registerRoutes(
       const hashedPassword = await bcrypt.hash(password, 10);
 
       const newPlayer = await storage.createPlayer({
-        name: name.trim(),
+        name: trimmedName,
+        email: trimmedEmail,
         password: hashedPassword,
         avatar,
         chips: 1000,

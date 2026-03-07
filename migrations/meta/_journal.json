@@ -8,6 +8,13 @@
       "when": 1761610096713,
       "tag": "0000_uneven_norrin_radd",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1741305600000,
+      "tag": "0001_add_player_email_and_created_at",
+      "breakpoints": true
     }
   ]
 }
