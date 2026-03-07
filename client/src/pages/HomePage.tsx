@@ -327,6 +327,14 @@ export default function HomePage() {
                   <span className="hidden sm:block text-sm text-muted-foreground whitespace-nowrap">
                     <span className="text-neon-cyan font-medium">{playerAuthStatus.player.name}</span>
                   </span>
+                  {/* Grades / Report Card */}
+                  {viewingWeekId && (
+                    <Link href={`/recap/${viewingWeekId}`}>
+                      <Button variant="outline" size="sm" className="border-neon-yellow/60 text-neon-yellow hover:bg-neon-yellow/10 text-xs sm:text-sm" data-testid="button-grades-link">
+                        Grades
+                      </Button>
+                    </Link>
+                  )}
                   {/* Feature 1: change password button */}
                   <ChangePasswordDialog />
                   {playerAuthStatus?.player?.isAdmin && (
@@ -419,6 +427,13 @@ export default function HomePage() {
                         ))}
                     </SelectContent>
                   </Select>
+                )}
+                {viewingWeekId && (
+                  <Link href={`/recap/${viewingWeekId}`}>
+                    <Button variant="outline" size="sm" className="border-neon-yellow/60 text-neon-yellow hover:bg-neon-yellow/10 text-xs font-display tracking-widest h-9">
+                      📊 Report Card
+                    </Button>
+                  </Link>
                 )}
                 {isViewingCurrentWeek && (
                   <PickSubmissionDialog
