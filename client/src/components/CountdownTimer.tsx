@@ -19,7 +19,10 @@ function formatTimeLeft(ms: number) {
 }
 
 export default function CountdownTimer({ targetDate }: CountdownTimerProps) {
-  const [timeLeft, setTimeLeft] = useState<number>(0);
+  // Lazy initializer avoids the one-frame flash of "PICKS LOCKED"
+  const [timeLeft, setTimeLeft] = useState<number>(() =>
+    targetDate ? targetDate.getTime() - Date.now() : 0
+  );
 
   useEffect(() => {
     if (!targetDate) return;

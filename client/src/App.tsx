@@ -8,16 +8,6 @@ import LoginPage from "@/pages/LoginPage";
 import AdminPage from "@/pages/AdminPage";
 import NotFound from "@/pages/not-found";
 
-interface AuthStatus {
-  isAuthenticated: boolean;
-  player?: {
-    id: string;
-    name: string;
-    chips: number;
-    avatar: string;
-  };
-}
-
 function Router() {
   return (
     <Switch>

@@ -93,10 +93,6 @@ export default function HomePage() {
     queryKey: ["/api/auth/status"],
   });
 
-  const { data: authStatus } = useQuery<{ isAuthenticated: boolean }>({
-    queryKey: ["/api/admin/status"],
-  });
-
   const { data: players = [], refetch: refetchPlayers } = useQuery<Player[]>({
     queryKey: ["/api/players"],
     refetchInterval: 10000,

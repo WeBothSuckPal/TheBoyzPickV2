@@ -6,7 +6,7 @@ const TICKER_ITEMS = [
   { icon: "🏈", text: "NFL" },
   { icon: "🏀", text: "NBA" },
   { icon: "⚾", text: "MLB" },
-  { icon: "🏀", text: "NCAAB" },
+  { icon: "🎓", text: "NCAAB" },
   { icon: "🏈", text: "NCAAF" },
   { icon: "🎯", text: "LOCK YOUR PICKS" },
   { icon: "🔥", text: "WHO'S GOT THE HOT HAND?" },

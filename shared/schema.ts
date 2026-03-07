@@ -14,7 +14,7 @@ export const players = pgTable("players", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-export const insertPlayerSchema = createInsertSchema(players).omit({ id: true });
+export const insertPlayerSchema = createInsertSchema(players).omit({ id: true, isAdmin: true, createdAt: true });
 export type InsertPlayer = z.infer<typeof insertPlayerSchema>;
 export type Player = typeof players.$inferSelect;
 

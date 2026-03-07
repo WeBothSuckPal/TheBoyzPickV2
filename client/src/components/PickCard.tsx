@@ -44,23 +44,19 @@ export default function PickCard({
     if (status === "win") return "border-neon-green";
     if (status === "loss") return "border-destructive";
     switch (pickType) {
-      case "LOCK":
-        return "border-neon-cyan";
-      case "SIDE":
-        return "border-neon-magenta";
-      case "LOTTO":
-        return "border-neon-yellow";
+      case "LOCK":  return "border-neon-cyan";
+      case "SIDE":  return "border-neon-magenta";
+      case "LOTTO": return "border-neon-yellow";
+      default:      return "border-border";
     }
   };
 
   const getTypeColor = () => {
     switch (pickType) {
-      case "LOCK":
-        return "bg-neon-cyan/20 text-neon-cyan border-neon-cyan";
-      case "SIDE":
-        return "bg-neon-magenta/20 text-neon-magenta border-neon-magenta";
-      case "LOTTO":
-        return "bg-neon-yellow/20 text-neon-yellow border-neon-yellow";
+      case "LOCK":  return "bg-neon-cyan/20 text-neon-cyan border-neon-cyan";
+      case "SIDE":  return "bg-neon-magenta/20 text-neon-magenta border-neon-magenta";
+      case "LOTTO": return "bg-neon-yellow/20 text-neon-yellow border-neon-yellow";
+      default:      return "bg-muted text-muted-foreground border-border";
     }
   };
 

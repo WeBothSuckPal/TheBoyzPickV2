@@ -8,6 +8,7 @@ import { Pool } from "@neondatabase/serverless";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { seedDatabase } from "./seed";
+import { applyMigrations } from "./applyMigrations";
 import { startCronJobs } from "./cronJobs";
 
 const app = express();
@@ -81,6 +82,7 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  await applyMigrations();
   await seedDatabase();
 
   // Cron jobs only in development — Vercel handles scheduling via /api/cron/fetch-games

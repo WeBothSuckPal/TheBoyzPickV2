@@ -19,10 +19,26 @@ interface ChatBoxProps {
   disabled?: boolean;
 }
 
+// Deterministic color from username — cycles through neon palette
+const CHAT_COLORS = [
+  "text-neon-cyan",
+  "text-neon-magenta",
+  "text-neon-yellow",
+  "text-neon-green",
+];
+
+function getUserColor(user: string): string {
+  let hash = 0;
+  for (let i = 0; i < user.length; i++) {
+    hash = (hash * 31 + user.charCodeAt(i)) >>> 0;
+  }
+  return CHAT_COLORS[hash % CHAT_COLORS.length];
+}
+
 export default function ChatBox({
   messages = [],
   onSendMessage,
-  currentUser = "Money-Mike",
+  currentUser = "",
   disabled = false,
 }: ChatBoxProps) {
   const [newMessage, setNewMessage] = useState("");
@@ -30,20 +46,9 @@ export default function ChatBox({
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
     if (newMessage.trim()) {
-      console.log(`${currentUser}: ${newMessage}`);
       onSendMessage?.(newMessage, currentUser);
       setNewMessage("");
     }
-  };
-
-  const getUserColor = (user: string) => {
-    const colors: Record<string, string> = {
-      "Money-Mike": "text-neon-cyan",
-      "The Professor": "text-neon-magenta",
-      "Mr. Gut-Feeling": "text-neon-yellow",
-      "The Jinx": "text-neon-green",
-    };
-    return colors[user] || "text-foreground";
   };
 
   return (
@@ -59,7 +64,7 @@ export default function ChatBox({
           {messages.map((msg) => (
             <div key={msg.id} className="space-y-1" data-testid={`message-${msg.id}`}>
               <div className="flex items-baseline gap-2">
-                <span className={`font-display text-sm ${getUserColor(msg.user)}`} data-testid={`text-user-${msg.id}`}>
+                <span className={`font-display text-sm ${getUserColor(msg.user ?? "")}`} data-testid={`text-user-${msg.id}`}>
                   {msg.user}
                 </span>
                 <span className="text-xs text-muted-foreground" data-testid={`text-time-${msg.id}`}>
