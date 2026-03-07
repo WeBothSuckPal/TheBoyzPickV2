@@ -62,15 +62,21 @@ export async function registerRoutes(
         req.session.isAdminAuthenticated = true;
       }
 
-      res.json({
-        success: true,
-        player: {
-          id: player.id,
-          name: player.name,
-          chips: player.chips,
-          avatar: player.avatar,
-          isAdmin: player.isAdmin,
-        },
+      req.session.save((saveErr) => {
+        if (saveErr) {
+          console.error("Session save error on login:", saveErr);
+          return res.status(500).json({ error: "Login failed: could not establish session" });
+        }
+        res.json({
+          success: true,
+          player: {
+            id: player.id,
+            name: player.name,
+            chips: player.chips,
+            avatar: player.avatar,
+            isAdmin: player.isAdmin,
+          },
+        });
       });
     } catch (error: any) {
       console.error("Login error:", error?.message ?? error);
@@ -164,14 +170,23 @@ export async function registerRoutes(
       req.session.playerId = newPlayer.id;
       req.session.playerName = newPlayer.name;
 
-      res.status(201).json({
-        success: true,
-        player: {
-          id: newPlayer.id,
-          name: newPlayer.name,
-          chips: newPlayer.chips,
-          avatar: newPlayer.avatar,
-        },
+      // Explicitly save the session before responding — in Vercel's serverless
+      // environment the function can be torn down right after res.end(), which
+      // means an implicit (post-response) session save may never complete.
+      req.session.save((saveErr) => {
+        if (saveErr) {
+          console.error("Session save error on register:", saveErr);
+          return res.status(500).json({ error: "Account created but session could not be established. Please log in." });
+        }
+        res.status(201).json({
+          success: true,
+          player: {
+            id: newPlayer.id,
+            name: newPlayer.name,
+            chips: newPlayer.chips,
+            avatar: newPlayer.avatar,
+          },
+        });
       });
     } catch (error: any) {
       console.error("Register error:", error?.message ?? error);

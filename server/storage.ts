@@ -27,8 +27,13 @@ import { eq, and, inArray, desc } from "drizzle-orm";
 import { getCurrentWeek } from "./weekUtils";
 import bcrypt from "bcryptjs";
 
-// Default password hash for in-memory dev players
-const DEFAULT_PASSWORD_HASH = bcrypt.hashSync("password", 10);
+// Default password hash for in-memory dev players — computed lazily so it
+// does NOT block the event loop at module-load time in production.
+let _defaultPasswordHash: string | null = null;
+function getDefaultPasswordHash(): string {
+  if (!_defaultPasswordHash) _defaultPasswordHash = bcrypt.hashSync("password", 10);
+  return _defaultPasswordHash;
+}
 
 export interface IStorage {
   getPlayers(): Promise<Player[]>;
@@ -92,10 +97,10 @@ export class MemStorage implements IStorage {
 
   private initializeDefaultData() {
     const defaultPlayers: InsertPlayer[] = [
-      { name: "Carter", password: DEFAULT_PASSWORD_HASH, chips: 1000, avatar: "dollar" },
-      { name: "Chub", password: DEFAULT_PASSWORD_HASH, chips: 1000, avatar: "brain" },
-      { name: "Perky", password: DEFAULT_PASSWORD_HASH, chips: 1000, avatar: "crystal" },
-      { name: "Jerry Fader", password: DEFAULT_PASSWORD_HASH, chips: 1000, avatar: "mirror" },
+      { name: "Carter", password: getDefaultPasswordHash(), chips: 1000, avatar: "dollar" },
+      { name: "Chub", password: getDefaultPasswordHash(), chips: 1000, avatar: "brain" },
+      { name: "Perky", password: getDefaultPasswordHash(), chips: 1000, avatar: "crystal" },
+      { name: "Jerry Fader", password: getDefaultPasswordHash(), chips: 1000, avatar: "mirror" },
     ];
 
     defaultPlayers.forEach((p) => {
