@@ -10,6 +10,7 @@ export const players = pgTable("players", {
   password: text("password").notNull(),
   chips: integer("chips").notNull().default(1000),
   avatar: text("avatar").notNull(),
+  isAdmin: boolean("is_admin").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

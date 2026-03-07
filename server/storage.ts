@@ -38,6 +38,7 @@ export interface IStorage {
   createPlayer(player: InsertPlayer): Promise<Player>;
   updatePlayerChips(playerId: string, chips: number): Promise<Player | undefined>;
   updatePlayerPassword(playerId: string, hashedPassword: string): Promise<Player | undefined>;
+  deletePlayer(playerId: string): Promise<void>;
 
   getWeeks(): Promise<Week[]>;
   getActiveWeek(): Promise<Week | undefined>;
@@ -106,6 +107,7 @@ export class MemStorage implements IStorage {
         password: p.password,
         avatar: p.avatar,
         chips: p.chips ?? 1000,
+        isAdmin: p.isAdmin ?? false,
         createdAt: new Date(),
       };
       this.players.set(id, player);
@@ -148,10 +150,15 @@ export class MemStorage implements IStorage {
       password: insertPlayer.password,
       avatar: insertPlayer.avatar,
       chips: insertPlayer.chips ?? 1000,
+      isAdmin: insertPlayer.isAdmin ?? false,
       createdAt: new Date(),
     };
     this.players.set(id, player);
     return player;
+  }
+
+  async deletePlayer(playerId: string): Promise<void> {
+    this.players.delete(playerId);
   }
 
   async updatePlayerChips(playerId: string, chips: number): Promise<Player | undefined> {
@@ -382,6 +389,10 @@ export class DbStorage implements IStorage {
       .where(eq(playersTable.id, playerId))
       .returning();
     return results[0];
+  }
+
+  async deletePlayer(playerId: string): Promise<void> {
+    await db.delete(playersTable).where(eq(playersTable.id, playerId));
   }
 
   async getWeeks(): Promise<Week[]> {
