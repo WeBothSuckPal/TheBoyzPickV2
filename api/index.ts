@@ -5,6 +5,7 @@ import { Pool, neonConfig } from "@neondatabase/serverless";
 import ws from "ws";
 import { registerRoutes } from "../server/routes";
 import { seedDatabase } from "../server/seed";
+import { applyMigrations } from "../server/applyMigrations";
 
 // Required for Neon serverless in non-browser environments
 neonConfig.webSocketConstructor = ws;
@@ -51,6 +52,7 @@ let initPromise: Promise<void> | null = null;
 function initialize(): Promise<void> {
   if (!initPromise) {
     initPromise = (async () => {
+      await applyMigrations();
       await seedDatabase();
       // No broadcast/WebSocket on Vercel — clients use polling
       await registerRoutes(app);

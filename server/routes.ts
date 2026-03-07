@@ -200,6 +200,68 @@ export async function registerRoutes(
     }
   });
 
+  // ── Weekly Recap: per-player stats + grade for a given week ─────────────
+  app.get("/api/weeks/:weekId/recap", async (req, res) => {
+    try {
+      const { weekId } = req.params;
+      const picks = await storage.getPicks(weekId);
+      const players = await storage.getPlayers();
+
+      // Only include players who submitted at least one pick
+      const playerMap = new Map(players.map((p) => [p.id, p]));
+      const byPlayer: Record<string, {
+        playerId: string; playerName: string; avatar: string;
+        wins: number; losses: number; pending: number;
+        chipDelta: number;
+        bestPick: { pick: string; chips: number; pickType: string } | null;
+        worstPick: { pick: string; chips: number; pickType: string } | null;
+      }> = {};
+
+      for (const pick of picks) {
+        const player = playerMap.get(pick.playerId);
+        if (!player) continue;
+        if (!byPlayer[pick.playerId]) {
+          byPlayer[pick.playerId] = {
+            playerId: pick.playerId,
+            playerName: player.name,
+            avatar: player.avatar,
+            wins: 0, losses: 0, pending: 0,
+            chipDelta: 0,
+            bestPick: null,
+            worstPick: null,
+          };
+        }
+        const entry = byPlayer[pick.playerId];
+        if (pick.status === "win") {
+          entry.wins++;
+          entry.chipDelta += pick.chips;
+          if (!entry.bestPick || pick.chips > entry.bestPick.chips) {
+            entry.bestPick = { pick: pick.pick, chips: pick.chips, pickType: pick.pickType };
+          }
+        } else if (pick.status === "loss") {
+          entry.losses++;
+          entry.chipDelta -= pick.chips;
+          if (!entry.worstPick || pick.chips > entry.worstPick.chips) {
+            entry.worstPick = { pick: pick.pick, chips: pick.chips, pickType: pick.pickType };
+          }
+        } else {
+          entry.pending++;
+        }
+      }
+
+      const recap = Object.values(byPlayer).map((e) => ({
+        ...e,
+        grade: calcGrade(e.wins, e.losses, e.chipDelta),
+      }));
+
+      // Sort by chipDelta descending (best performers first)
+      recap.sort((a, b) => b.chipDelta - a.chipDelta);
+      res.json(recap);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to generate recap" });
+    }
+  });
+
   app.get("/api/picks", async (req, res) => {
     try {
       const weekId = req.query.weekId as string;
@@ -984,4 +1046,24 @@ function determinePickOutcome(
   }
 
   return null;
+}
+
+// ── Grade calculation for weekly recap ────────────────────────────────────
+function calcGrade(wins: number, losses: number, chipDelta: number): string {
+  const total = wins + losses;
+  if (total === 0) return "N/A";
+  const rate = wins / total;
+  // Base grade from win rate
+  let base: string;
+  if (rate === 1.0)        base = "A+";
+  else if (rate >= 0.75)   base = "A";
+  else if (rate >= 0.60)   base = "B+";
+  else if (rate >= 0.50)   base = "B";
+  else if (rate >= 0.34)   base = "C";
+  else if (rate > 0)       base = "D";
+  else                     base = "F";
+  // Chip delta bump: if you won big on a tough record, give a +
+  if (base !== "A+" && chipDelta > 0 && base === "C") base = "C+";
+  if (base !== "A+" && chipDelta > 500 && base === "B") base = "B+";
+  return base;
 }
