@@ -49,20 +49,29 @@ app.use(express.urlencoded({ extended: false }));
 // Lazy initialization — routes + error handler are registered on first request
 let initPromise: Promise<void> | null = null;
 
+let routesRegistered = false;
+
 function initialize(): Promise<void> {
   if (!initPromise) {
     initPromise = (async () => {
       await applyMigrations();
       await seedDatabase();
-      // No broadcast/WebSocket on Vercel — clients use polling
-      await registerRoutes(app);
-      // Error handler must come AFTER routes in Express
-      app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-        const status = err.status || err.statusCode || 500;
-        const message = err.message || "Internal Server Error";
-        res.status(status).json({ message });
-      });
-    })();
+      if (!routesRegistered) {
+        // No broadcast/WebSocket on Vercel — clients use polling
+        await registerRoutes(app);
+        // Error handler must come AFTER routes in Express
+        app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+          const status = err.status || err.statusCode || 500;
+          const message = err.message || "Internal Server Error";
+          res.status(status).json({ message });
+        });
+        routesRegistered = true;
+      }
+    })().catch((err) => {
+      // Reset so the next request retries rather than failing permanently
+      initPromise = null;
+      throw err;
+    });
   }
   return initPromise;
 }
