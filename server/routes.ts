@@ -58,7 +58,7 @@ export async function registerRoutes(
       req.session.playerId = player.id;
       req.session.playerName = player.name;
 
-      if (player.name === "Carter") {
+      if (player.isAdmin) {
         req.session.isAdminAuthenticated = true;
       }
 
@@ -69,6 +69,7 @@ export async function registerRoutes(
           name: player.name,
           chips: player.chips,
           avatar: player.avatar,
+          isAdmin: player.isAdmin,
         },
       });
     } catch (error) {
@@ -91,13 +92,14 @@ export async function registerRoutes(
         return res.json({ isAuthenticated: false });
       }
 
-      res.json({ 
+      res.json({
         isAuthenticated: true,
         player: {
           id: player.id,
           name: player.name,
           chips: player.chips,
           avatar: player.avatar,
+          isAdmin: player.isAdmin,
         },
       });
     } catch (error) {
@@ -823,6 +825,110 @@ export async function registerRoutes(
       res.json({ success: true, resolved, skipped });
     } catch (error: any) {
       res.status(500).json({ error: error.message || "Failed to auto-resolve" });
+    }
+  });
+
+  // ── Owner: full player roster with emails ─────────────────────────────
+  app.get("/api/admin/players", async (req, res) => {
+    try {
+      if (!req.session.isAdminAuthenticated) {
+        return res.status(401).json({ error: "Admin authentication required" });
+      }
+      const players = await storage.getPlayers();
+      res.json(players.map(({ password, ...p }) => p));
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch players" });
+    }
+  });
+
+  // ── Owner: adjust chips for a player ──────────────────────────────────
+  app.post("/api/admin/players/:id/chips", async (req, res) => {
+    try {
+      if (!req.session.isAdminAuthenticated) {
+        return res.status(401).json({ error: "Admin authentication required" });
+      }
+      const { id } = req.params;
+      const { amount, reason } = req.body;
+      if (typeof amount !== "number") {
+        return res.status(400).json({ error: "amount must be a number" });
+      }
+      const player = await storage.getPlayer(id);
+      if (!player) return res.status(404).json({ error: "Player not found" });
+
+      const newChips = player.chips + amount;
+      const updated = await storage.updatePlayerChips(id, newChips);
+      await storage.createChipTransaction({
+        playerId: id,
+        amount,
+        reason: reason || (amount >= 0 ? "Admin adjustment (added)" : "Admin adjustment (deducted)"),
+        weekId: null,
+      });
+      res.json({ success: true, player: updated });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to adjust chips" });
+    }
+  });
+
+  // ── Owner: remove a player ─────────────────────────────────────────────
+  app.delete("/api/admin/players/:id", async (req, res) => {
+    try {
+      if (!req.session.isAdminAuthenticated) {
+        return res.status(401).json({ error: "Admin authentication required" });
+      }
+      const { id } = req.params;
+      const player = await storage.getPlayer(id);
+      if (!player) return res.status(404).json({ error: "Player not found" });
+      if (player.isAdmin) {
+        return res.status(403).json({ error: "Cannot remove an admin account" });
+      }
+      await storage.deletePlayer(id);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to remove player" });
+    }
+  });
+
+  // ── Owner: get all weeks ───────────────────────────────────────────────
+  app.get("/api/admin/weeks", async (req, res) => {
+    try {
+      if (!req.session.isAdminAuthenticated) {
+        return res.status(401).json({ error: "Admin authentication required" });
+      }
+      const weeks = await storage.getWeeks();
+      res.json(weeks);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch weeks" });
+    }
+  });
+
+  // ── Owner: create a new week ───────────────────────────────────────────
+  app.post("/api/admin/weeks", async (req, res) => {
+    try {
+      if (!req.session.isAdminAuthenticated) {
+        return res.status(401).json({ error: "Admin authentication required" });
+      }
+      const { weekNumber } = req.body;
+      if (!weekNumber || typeof weekNumber !== "number") {
+        return res.status(400).json({ error: "weekNumber is required" });
+      }
+      const week = await storage.createWeek({ weekNumber, isActive: false });
+      res.status(201).json(week);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create week" });
+    }
+  });
+
+  // ── Owner: set a week as active ────────────────────────────────────────
+  app.post("/api/admin/weeks/:id/activate", async (req, res) => {
+    try {
+      if (!req.session.isAdminAuthenticated) {
+        return res.status(401).json({ error: "Admin authentication required" });
+      }
+      const { id } = req.params;
+      await storage.setActiveWeek(id);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to set active week" });
     }
   });
 

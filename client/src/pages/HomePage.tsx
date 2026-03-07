@@ -71,6 +71,7 @@ interface PlayerAuthStatus {
     name: string;
     chips: number;
     avatar: string;
+    isAdmin?: boolean;
   };
 }
 
@@ -332,10 +333,10 @@ export default function HomePage() {
                   </span>
                   {/* Feature 1: change password button */}
                   <ChangePasswordDialog />
-                  {authStatus?.isAuthenticated && (
+                  {playerAuthStatus?.player?.isAdmin && (
                     <Link href="/admin">
                       <Button variant="outline" size="sm" className="border-destructive text-destructive hover:bg-destructive/10 text-xs sm:text-sm" data-testid="button-admin-link">
-                        Admin
+                        Commissioner
                       </Button>
                     </Link>
                   )}
