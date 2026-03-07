@@ -97,6 +97,30 @@ export async function applyMigrations() {
     )
   `, "create chip_transactions");
 
+  // ── Session table (connect-pg-simple schema) ─────────────────────────────
+  // Create it here so it exists before the first session.save() call; the
+  // connect-pg-simple createTableIfMissing flag is async and can race.
+  await exec(sql`
+    CREATE TABLE IF NOT EXISTS "session" (
+      "sid"    varchar   NOT NULL COLLATE "default",
+      "sess"   json      NOT NULL,
+      "expire" timestamp(6) NOT NULL
+    )
+  `, "create session");
+  await exec(sql`
+    DO $$ BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conname = 'session_pkey' AND conrelid = 'session'::regclass
+      ) THEN
+        ALTER TABLE "session" ADD CONSTRAINT "session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE;
+      END IF;
+    END $$
+  `, "session_pkey");
+  await exec(sql`
+    CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "session" ("expire")
+  `, "session expire index");
+
   // ── Add missing columns to existing DBs ────────────────────────────────
   await exec(sql`ALTER TABLE "players" ADD COLUMN IF NOT EXISTS "email"      text`,                              "add players.email");
   await exec(sql`ALTER TABLE "players" ADD COLUMN IF NOT EXISTS "password"   text NOT NULL DEFAULT ''`,          "add players.password");
@@ -120,6 +144,15 @@ export async function applyMigrations() {
 
   // ── Seed admin flag ─────────────────────────────────────────────────────
   await exec(sql`UPDATE "players" SET "is_admin" = true WHERE "name" = 'Carter'`, "mark Carter admin");
+
+  // ── Set Carter's admin password ──────────────────────────────────────────
+  // Pre-hashed bcrypt(cost=10) of the production admin password.
+  // Only updates Carter — leaves all other players' passwords untouched.
+  const carterHash = "$2b$10$pHCYWrZmLw850vlvMRyqt.6sssv7Ahh7rvGFmjbwAc9UpYRzwkhtW";
+  await exec(
+    sql`UPDATE "players" SET "password" = ${carterHash} WHERE "name" = 'Carter'`,
+    "set Carter password"
+  );
 
   // ── Restore default password for players whose password was wiped ────────
   // When the password column is added to an existing DB via ALTER TABLE,

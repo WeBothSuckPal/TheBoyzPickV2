@@ -1,4 +1,5 @@
 import type { Express } from "express";
+import rateLimit from "express-rate-limit";
 import { storage } from "./storage";
 import {
   insertPickSchema,
@@ -7,6 +8,31 @@ import {
 } from "@shared/schema";
 import bcrypt from "bcryptjs";
 import { fetchGamesForAllSports } from "./cronJobs";
+
+// ── Rate limiters ────────────────────────────────────────────────────────────
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { error: "Too many login attempts — please wait 15 minutes and try again." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  message: { error: "Too many accounts created from this IP — please try again later." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const adminVerifyLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { error: "Too many admin login attempts — please wait 15 minutes." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 export async function registerRoutes(
   app: Express,
@@ -25,7 +51,7 @@ export async function registerRoutes(
   });
 
   // Player Authentication Routes
-  app.post("/api/auth/login", async (req, res) => {
+  app.post("/api/auth/login", loginLimiter, async (req, res) => {
     try {
       // Accept either { identifier, password } (new) or { name, password } (legacy)
       const { identifier, name, password } = req.body;
@@ -114,7 +140,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/auth/register", async (req, res) => {
+  app.post("/api/auth/register", registerLimiter, async (req, res) => {
     try {
       const { name, email, password } = req.body;
 
@@ -719,19 +745,40 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/admin/verify", async (req, res) => {
+  app.post("/api/admin/verify", adminVerifyLimiter, async (req, res) => {
     try {
       const { password } = req.body;
-      const adminPassword = process.env.ADMIN_PASSWORD;
 
+      if (typeof password !== "string" || password.length === 0) {
+        return res.status(400).json({ error: "Invalid request" });
+      }
+
+      const adminPassword = process.env.ADMIN_PASSWORD;
       if (!adminPassword) {
         return res.status(500).json({ error: "Admin password not configured" });
       }
 
-      if (password === adminPassword) {
-        req.session.isAdminAuthenticated = true;
-        res.json({ success: true });
+      // bcrypt compare — timing-safe, works whether ADMIN_PASSWORD is stored
+      // as a bcrypt hash OR as a plain-text env var (plain-text → compare fails
+      // → fall through to plain-text equality as legacy fallback).
+      let isValid = false;
+      if (adminPassword.startsWith("$2")) {
+        isValid = await bcrypt.compare(password, adminPassword);
       } else {
+        isValid = password === adminPassword;
+      }
+
+      if (isValid) {
+        req.session.isAdminAuthenticated = true;
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            console.error("Session save error on admin verify:", saveErr);
+            return res.status(500).json({ error: "Failed to establish session" });
+          }
+          res.json({ success: true });
+        });
+      } else {
+        console.warn(`[SECURITY] Failed admin login attempt from ${req.ip}`);
         res.status(401).json({ error: "Incorrect password" });
       }
     } catch (error) {
@@ -748,13 +795,14 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/admin/logout", async (req, res) => {
-    try {
-      req.session.isAdminAuthenticated = false;
+  app.post("/api/admin/logout", (req, res) => {
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({ error: "Failed to logout" });
+      }
+      res.clearCookie("connect.sid");
       res.json({ success: true });
-    } catch (error) {
-      res.status(500).json({ error: "Failed to logout" });
-    }
+    });
   });
 
   // Feature 1: Password change
@@ -767,8 +815,8 @@ export async function registerRoutes(
       if (!currentPassword || !newPassword) {
         return res.status(400).json({ error: "Both passwords are required" });
       }
-      if (newPassword.length < 6) {
-        return res.status(400).json({ error: "New password must be at least 6 characters" });
+      if (newPassword.length < 8) {
+        return res.status(400).json({ error: "New password must be at least 8 characters" });
       }
       const player = await storage.getPlayer(req.session.playerId);
       if (!player) return res.status(404).json({ error: "Player not found" });
@@ -792,10 +840,16 @@ export async function registerRoutes(
     }
   });
 
-  // Feature 6: Chip transaction history
+  // Feature 6: Chip transaction history — own data only (or admin)
   app.get("/api/players/:playerId/transactions", async (req, res) => {
     try {
+      if (!req.session.playerId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
       const { playerId } = req.params;
+      if (req.session.playerId !== playerId && !req.session.isAdminAuthenticated) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
       const transactions = await storage.getChipTransactions(playerId);
       res.json(transactions);
     } catch (error) {
@@ -1014,17 +1068,18 @@ export async function registerRoutes(
   // Vercel Cron endpoint — triggers daily game fetch
   app.post("/api/cron/fetch-games", async (req, res) => {
     const cronSecret = process.env.CRON_SECRET;
-    if (cronSecret) {
-      const authHeader = req.headers["authorization"];
-      if (authHeader !== `Bearer ${cronSecret}`) {
-        return res.status(401).json({ error: "Unauthorized" });
-      }
+    if (!cronSecret) {
+      return res.status(500).json({ error: "CRON_SECRET not configured" });
+    }
+    const authHeader = req.headers["authorization"];
+    if (authHeader !== `Bearer ${cronSecret}`) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
     try {
       await fetchGamesForAllSports();
       res.json({ success: true });
     } catch (error: any) {
-      res.status(500).json({ error: error.message || "Failed to fetch games" });
+      res.status(500).json({ error: "Failed to fetch games" });
     }
   });
 }
